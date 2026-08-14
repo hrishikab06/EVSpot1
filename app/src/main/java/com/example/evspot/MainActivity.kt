@@ -64,6 +64,7 @@ fun EVSpotApp() {
             when (val dest = currentDestination) {
                 AppDestinations.BOOKINGS -> ChargingHistoryScreen()
                 AppDestinations.VEHICLE -> MyVehiclesScreen()
+                AppDestinations.MAP -> PlanTripScreen()
                 else -> Greeting(
                     name = dest.label,
                     modifier = Modifier.padding(innerPadding)

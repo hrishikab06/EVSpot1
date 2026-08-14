@@ -21,6 +21,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.evspot.ui.theme.EVSpotTheme
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 
 enum class ConnectionStatus {
     CONNECTED, OFFLINE
@@ -31,6 +34,7 @@ data class Vehicle(
     val name: String,
     val model: String,
     val plate: String,
+    val imageRes: Int,
     val batteryPercentage: Int,
     val estRangeKm: Int,
     val connectionStatus: ConnectionStatus,
@@ -95,37 +99,8 @@ fun MyVehiclesScreen() {
                 }
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                    label = { Text("Home") },
-                    selected = false,
-                    onClick = {}
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Map, contentDescription = null) },
-                    label = { Text("Map") },
-                    selected = false,
-                    onClick = {}
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.DirectionsCar, contentDescription = null) },
-                    label = { Text("Vehicle") },
-                    selected = true,
-                    onClick = {}
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
-                    label = { Text("Bookings") },
-                    selected = false,
-                    onClick = {}
-                )
-            }
-        }
+
+
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -245,12 +220,13 @@ fun VehicleCard(vehicle: Vehicle) {
                         modifier = Modifier.size(100.dp, 80.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.DirectionsCar,
-                                contentDescription = null,
-                                tint = Color.LightGray,
-                                modifier = Modifier.size(40.dp)
+                            Image(
+                                painter = painterResource(id = vehicle.imageRes),
+                                contentDescription = "Vehicle image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
+
                         }
                     }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -268,13 +244,13 @@ fun VehicleCard(vehicle: Vehicle) {
                                     shape = RoundedCornerShape(4.dp),
                                     color = Color(0xFFE8F5E9)
                                 ) {
-                                    Text(
-                                        text = "Primary",
-                                        color = Color(0xFF2E7D32),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
+//                                    Text(
+//                                        text = "Primary",
+//                                        color = Color(0xFF2E7D32),
+//                                        fontSize = 10.sp,
+//                                        fontWeight = FontWeight.Medium,
+//                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+//                                    )
                                 }
                             }
                         }
@@ -400,6 +376,7 @@ val sampleVehicles = listOf(
         name = "EvSpot EV-01",
         model = "Tata Nexon EV Max",
         plate = "MH01AB1234",
+        imageRes = R.drawable.car,
         batteryPercentage = 72,
         estRangeKm = 246,
         connectionStatus = ConnectionStatus.CONNECTED,
@@ -412,6 +389,7 @@ val sampleVehicles = listOf(
         name = "EvSpot Scooter",
         model = "Ather 450X",
         plate = "MH01CD5678",
+        imageRes = R.drawable.scooter,
         batteryPercentage = 68,
         estRangeKm = 89,
         connectionStatus = ConnectionStatus.CONNECTED,
@@ -423,6 +401,7 @@ val sampleVehicles = listOf(
         name = "Comet EV",
         model = "MG Comet EV",
         plate = "MH01EF9012",
+        imageRes = R.drawable.commet,
         batteryPercentage = 35,
         estRangeKm = 72,
         connectionStatus = ConnectionStatus.OFFLINE,

@@ -100,37 +100,7 @@ fun ChargingHistoryScreen() {
                 )
             }
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                    label = { Text("Home") },
-                    selected = false,
-                    onClick = {}
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Map, contentDescription = null) },
-                    label = { Text("Map") },
-                    selected = false,
-                    onClick = {}
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.DirectionsCar, contentDescription = null) },
-                    label = { Text("Vehicle") },
-                    selected = false,
-                    onClick = {}
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
-                    label = { Text("Bookings") },
-                    selected = true,
-                    onClick = {}
-                )
-            }
-        }
+
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
