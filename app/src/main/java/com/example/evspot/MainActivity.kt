@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.navigation.compose.rememberNavController
+import com.example.evspot.navigation.AppNavGraph
 import com.example.evspot.ui.theme.EVSpotTheme
 
 class MainActivity : ComponentActivity() {
@@ -12,7 +14,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             EVSpotTheme {
-                VehicleDashboard()
+                val navController = rememberNavController()
+                AppNavGraph(navController)
             }
         }
     }
