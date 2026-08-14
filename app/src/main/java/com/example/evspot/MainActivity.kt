@@ -6,6 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -16,7 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -37,7 +41,7 @@ class MainActivity : ComponentActivity() {
 @PreviewScreenSizes
 @Composable
 fun EVSpotApp() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.BOOKINGS) }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -45,7 +49,7 @@ fun EVSpotApp() {
                 item(
                     icon = {
                         Icon(
-                            painterResource(it.icon),
+                            imageVector = it.icon,
                             contentDescription = it.label
                         )
                     },
@@ -57,21 +61,25 @@ fun EVSpotApp() {
         }
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Greeting(
-                name = "Android",
-                modifier = Modifier.padding(innerPadding)
-            )
+            when (val dest = currentDestination) {
+                AppDestinations.BOOKINGS -> ChargingHistoryScreen()
+                else -> Greeting(
+                    name = dest.label,
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
         }
     }
 }
 
 enum class AppDestinations(
     val label: String,
-    val icon: Int,
+    val icon: ImageVector,
 ) {
-    HOME("Home", R.drawable.ic_home),
-    FAVORITES("Favorites", R.drawable.ic_favorite),
-    PROFILE("Profile", R.drawable.ic_account_box),
+    HOME("Home", Icons.Default.Home),
+    MAP("Map", Icons.Default.Map),
+    VEHICLE("Vehicle", Icons.Default.DirectionsCar),
+    BOOKINGS("Bookings", Icons.Default.CalendarMonth),
 }
 
 @Composable
