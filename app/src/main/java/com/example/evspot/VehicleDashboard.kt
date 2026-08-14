@@ -101,13 +101,13 @@ fun VehicleHeader() {
                 modifier = Modifier.size(28.dp)
             )
             Text(
-                text = "Volt",
+                text = "Ev",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
             Text(
-                text = "Way",
+                text = "Spot",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = VoltGreen
@@ -254,7 +254,7 @@ fun VehicleHeroCard(vehicle: Vehicle) {
             ) {
                 // Placeholder for nexon_ev.png
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    painter = painterResource(id = R.drawable.nexon_ev),
                     contentDescription = "Vehicle Image",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit
