@@ -58,10 +58,16 @@ fun ChargingHistoryScreen() {
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "VoltWay",
+                                text = "Ev",
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1B5E20),
-                                fontSize = 20.sp
+                                color = Color.Black
+
+                            )
+                            Text(
+                                    text = "Spot",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1B5E20),
+                            fontSize = 20.sp
                             )
                         }
                     },
