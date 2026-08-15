@@ -24,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.navigation.compose.rememberNavController
+import com.example.evspot.navigation.AppNavGraph
 import com.example.evspot.ui.theme.EVSpotTheme
 
 class MainActivity : ComponentActivity() {
@@ -32,7 +34,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             EVSpotTheme {
-                EVSpotApp()
+                val navController = rememberNavController()
+                AppNavGraph(navController)
             }
         }
     }
