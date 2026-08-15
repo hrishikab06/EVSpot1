@@ -29,7 +29,7 @@ enum class ConnectionStatus {
     CONNECTED, OFFLINE
 }
 
-data class Vehicle(
+data class VehicleListing(
     val id: String,
     val name: String,
     val model: String,
@@ -192,7 +192,7 @@ fun VehiclesSummaryCard() {
 }
 
 @Composable
-fun VehicleCard(vehicle: Vehicle) {
+fun VehicleCard(vehicle: VehicleListing) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -371,7 +371,7 @@ fun TipsCard() {
 }
 
 val sampleVehicles = listOf(
-    Vehicle(
+    VehicleListing(
         id = "1",
         name = "EvSpot EV-01",
         model = "Tata Nexon EV Max",
@@ -384,7 +384,7 @@ val sampleVehicles = listOf(
         lastChargedInfo = "Today, 07:42 AM",
         isPrimary = true
     ),
-    Vehicle(
+    VehicleListing(
         id = "2",
         name = "EvSpot Scooter",
         model = "Ather 450X",
@@ -396,7 +396,7 @@ val sampleVehicles = listOf(
         chargingStatus = "Not Charging",
         lastChargedInfo = "Yesterday, 09:15 PM"
     ),
-    Vehicle(
+    VehicleListing(
         id = "3",
         name = "Comet EV",
         model = "MG Comet EV",
