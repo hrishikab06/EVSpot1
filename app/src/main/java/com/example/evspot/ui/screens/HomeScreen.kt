@@ -48,7 +48,8 @@ fun HomeScreen(
             // Full screen map as background
             ChargingMap(
                 modifier = Modifier.fillMaxSize(),
-                bottomPadding = 160.dp
+                bottomPadding = 160.dp,
+                isLiteMode = true
             )
 
             // Floating Top UI

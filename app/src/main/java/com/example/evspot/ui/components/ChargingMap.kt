@@ -19,7 +19,8 @@ import com.example.evspot.ui.screens.MapScreen
 fun ChargingMap(
     modifier: Modifier = Modifier,
     bottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
-    useMock: Boolean = true // Set to true to avoid Google Maps crashes on emulator without API key
+    useMock: Boolean = false,
+    isLiteMode: Boolean = false
 ) {
     Box(
         modifier = modifier.fillMaxSize()
@@ -27,7 +28,10 @@ fun ChargingMap(
         if (useMock) {
             MockMapBackground()
         } else {
-            MapScreen(modifier = Modifier.fillMaxSize())
+            MapScreen(
+                modifier = Modifier.fillMaxSize(),
+                liteModeEnabled = isLiteMode
+            )
         }
         
         FloatingActionButton(
