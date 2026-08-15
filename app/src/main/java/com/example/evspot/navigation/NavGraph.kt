@@ -85,5 +85,8 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Screen.Health.route) { 
             VehicleHealthScreen(onBack = { navController.popBackStack() }) 
         }
+        composable(Screen.PastTrips.route) {
+            PastTripsScreen(onBackClick = { navController.popBackStack() })
+        }
     }
 }

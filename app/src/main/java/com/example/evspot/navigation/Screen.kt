@@ -16,4 +16,5 @@ sealed class Screen(val route: String) {
     object TripPlanner : Screen("trip_planner")
     object NearbyChargers : Screen("nearby_chargers")
     object UpcomingBookings : Screen("upcoming_bookings")
+    object PastTrips : Screen("past_trips")
 }

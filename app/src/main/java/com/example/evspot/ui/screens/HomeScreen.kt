@@ -148,7 +148,7 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
             QuickAccessCard(
                 title = "Past trips",
                 icon = Icons.Default.BarChart,
-                onClick = { onNavigate(Screen.Usage.route) },
+                onClick = { onNavigate(Screen.PastTrips.route) },
                 modifier = Modifier.weight(1f)
             )
             QuickAccessCard(
