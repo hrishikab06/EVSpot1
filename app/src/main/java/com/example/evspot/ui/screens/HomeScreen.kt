@@ -146,7 +146,7 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             QuickAccessCard(
-                title = "Energy Usage",
+                title = "Past trips",
                 icon = Icons.Default.BarChart,
                 onClick = { onNavigate(Screen.Usage.route) },
                 modifier = Modifier.weight(1f)

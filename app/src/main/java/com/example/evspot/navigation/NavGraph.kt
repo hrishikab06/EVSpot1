@@ -1,5 +1,5 @@
 package com.example.evspot.navigation
-
+import com.example.evspot.ui.screens.detail.PlanTripScreen
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -62,8 +62,13 @@ fun AppNavGraph(navController: NavHostController) {
         }
         
         // Detail Screens
-        composable(Screen.TripPlanner.route) { 
-            PlanTripScreen(onBack = { navController.popBackStack() }) 
+        // Inside NavGraph.kt
+        composable(Screen.TripPlanner.route) {
+            PlanTripScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
         composable(Screen.NearbyChargers.route) { 
             NearbyChargersScreen(onBack = { navController.popBackStack() }) 
