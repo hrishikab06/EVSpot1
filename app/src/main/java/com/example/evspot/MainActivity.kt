@@ -1,4 +1,5 @@
 package com.example.evspot
+import com.example.evspot.ui.screens.detail.PlanTripScreen
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
