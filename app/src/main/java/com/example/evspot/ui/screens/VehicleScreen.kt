@@ -1,5 +1,5 @@
 package com.example.evspot.ui.screens
-
+import com.example.evspot.MyVehiclesScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -9,7 +9,5 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun VehicleScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Vehicle Details Screen")
-    }
+    MyVehiclesScreen()
 }

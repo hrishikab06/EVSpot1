@@ -137,7 +137,7 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
                 modifier = Modifier.weight(1f)
             )
             QuickAccessCard(
-                title = "Upcoming Bookings",
+                title = "Booking status",
                 icon = Icons.Default.Event,
                 badgeCount = 2,
                 onClick = { onNavigate(Screen.UpcomingBookings.route) },
