@@ -10,6 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.example.evspot.model.ChargingSpot
+import com.example.evspot.model.MapConfig
+import com.google.android.gms.maps.GoogleMapOptions
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -17,7 +20,8 @@ import com.google.maps.android.compose.*
 @Composable
 fun MapScreen(
     modifier: Modifier = Modifier,
-    chargingSpots: List<ChargingSpot> = mockChargingSpots
+    chargingSpots: List<ChargingSpot> = mockChargingSpots,
+    liteModeEnabled: Boolean = false
 ) {
     val context = LocalContext.current
     var hasLocationPermission by remember {
@@ -46,9 +50,8 @@ fun MapScreen(
         }
     }
 
-    val singapore = LatLng(1.35, 103.87)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(singapore, 12f)
+        position = CameraPosition.fromLatLngZoom(MapConfig.vehicleLocation, MapConfig.defaultZoom)
     }
 
     val mapProperties by remember(hasLocationPermission) {
@@ -63,8 +66,19 @@ fun MapScreen(
         modifier = modifier.fillMaxSize(),
         cameraPositionState = cameraPositionState,
         properties = mapProperties,
+        googleMapOptionsFactory = {
+            GoogleMapOptions().liteMode(liteModeEnabled)
+        },
         uiSettings = MapUiSettings(myLocationButtonEnabled = hasLocationPermission)
     ) {
+        // Vehicle Marker
+        Marker(
+            state = MarkerState(position = MapConfig.vehicleLocation),
+            title = "My Vehicle",
+            snippet = "EVSpot EV-01",
+            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+        )
+
         chargingSpots.forEach { spot ->
             Marker(
                 state = MarkerState(position = spot.position),
