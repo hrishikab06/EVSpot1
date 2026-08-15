@@ -20,7 +20,7 @@ import com.example.evspot.R
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(onNavigateToHome: () -> Unit) {
+fun SplashScreen(onNavigateToNext: () -> Unit) {
     val alpha = remember { Animatable(0f) }
     val scale = remember { Animatable(0.95f) }
 
@@ -30,7 +30,7 @@ fun SplashScreen(onNavigateToHome: () -> Unit) {
         alpha.animateTo(1f, animationSpec)
         scale.animateTo(1f, animationSpec)
         delay(1500)
-        onNavigateToHome()
+        onNavigateToNext()
     }
 
     Box(
