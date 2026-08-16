@@ -7,31 +7,93 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.model.ChargingSpot
+import com.example.evspot.model.MapConfig
 import com.example.evspot.ui.screens.MapScreen
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.launch
 
 @Composable
 fun ChargingMap(
     modifier: Modifier = Modifier,
     bottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
-    useMock: Boolean = true // Set to true to avoid Google Maps crashes on emulator without API key
+    useMock: Boolean = false,
+    isLiteMode: Boolean = false,
+    vehicleLocation: LatLng? = null,
+    searchCenter: LatLng? = null,
+    searchRadius: Double = MapConfig.searchRadius.toDouble(),
+    chargingSpots: List<ChargingSpot> = emptyList(),
+    onMapClick: ((LatLng) -> Unit)? = null,
+    onDeviceLocationChanged: ((LatLng) -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(MapConfig.DEFAULT_LOCATION, MapConfig.defaultZoom)
+    }
+
+    // Move camera when search center changes
+    LaunchedEffect(searchCenter) {
+        searchCenter?.let {
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(it, MapConfig.defaultZoom)
+            )
+        }
+    }
+
     Box(
         modifier = modifier.fillMaxSize()
     ) {
         if (useMock) {
             MockMapBackground()
         } else {
-            MapScreen(modifier = Modifier.fillMaxSize())
+            MapScreen(
+                modifier = Modifier.fillMaxSize(),
+                liteModeEnabled = isLiteMode,
+                cameraPositionState = cameraPositionState,
+                vehicleLocation = vehicleLocation,
+                searchCenter = searchCenter,
+                searchRadius = searchRadius,
+                chargingSpots = chargingSpots,
+                onMapClick = onMapClick,
+                onDeviceLocationChanged = onDeviceLocationChanged
+            )
         }
         
         FloatingActionButton(
-            onClick = { /* Handle my location */ },
+            onClick = {
+                try {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                        location?.let {
+                            coroutineScope.launch {
+                                cameraPositionState.animate(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(it.latitude, it.longitude),
+                                        MapConfig.defaultZoom
+                                    )
+                                )
+                            }
+                        }
+                    }
+                } catch (e: SecurityException) {
+                    // Handled by permission logic in MapScreen
+                }
+            },
             modifier = Modifier
                 .padding(bottom = 16.dp + bottomPadding, end = 16.dp)
                 .size(48.dp)
