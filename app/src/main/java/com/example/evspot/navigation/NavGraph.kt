@@ -21,6 +21,9 @@ fun AppNavGraph(navController: NavHostController) {
                 }
             })
         }
+        composable(Screen.Account.route) {
+            AccountScreen(onBack = { navController.popBackStack() })
+        }
 
         composable(Screen.Login.route) {
             LoginScreen(

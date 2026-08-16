@@ -58,7 +58,7 @@ fun HomeScreen(
                     .statusBarsPadding()
                     .padding(horizontal = 16.dp)
             ) {
-                FloatingTopBar()
+                FloatingTopBar(onNavigate = onNavigate)
                 Spacer(modifier = Modifier.height(12.dp))
                 SearchBar(modifier = Modifier.fillMaxWidth())
             }
@@ -164,7 +164,7 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FloatingTopBar() {
+fun FloatingTopBar(onNavigate: (String) -> Unit) {
     // We reuse the components from TopBar but make it floating and transparent
     Row(
         modifier = Modifier
@@ -211,13 +211,8 @@ fun FloatingTopBar() {
                 }
             }
             Spacer(modifier = Modifier.width(4.dp))
-            IconButton(onClick = { }) {
-                Icon(
-                    Icons.Default.AccountCircle,
-                    contentDescription = "Profile",
-                    modifier = Modifier.size(36.dp),
-                    tint = Color.Black
-                )
+            IconButton(onClick = { onNavigate(Screen.Account.route) }) {
+                Icon(Icons.Default.AccountCircle, contentDescription = "Account", tint = Color.Black)
             }
         }
     }
