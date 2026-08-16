@@ -1,4 +1,5 @@
 package com.example.evspot.ui.screens.detail
+import com.example.evspot.navigation.Screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+data class ChargingSlot(
+    val id: Int,
+    val isAvailable: Boolean,
+    val type: String,
+    val statusText: String? = null // e.g., "Ready" or "Available until 5 PM" or "Available in 15 min"
+)
+
 data class ChargerStation(
     val name: String,
     val type: String,
@@ -29,19 +37,94 @@ data class ChargerStation(
     val connectors: String,
     val hours: String,
     val availability: String,
-    val isFull: Boolean = false
+    val isFull: Boolean = false,
+    val slots: List<ChargingSlot> = emptyList()
 )
 
 val sampleStations = listOf(
-    ChargerStation("GreenCharge Station", "DC Fast", "Bandra Kurla Complex, Mumbai", 0.8, 3, 20, 4.6, 128, 60, "CCS, CHAdeMO", "24/7", "3 available"),
-    ChargerStation("VoltPoint Hub", "DC Fast", "Powai, Mumbai", 1.4, 5, 18, 4.4, 96, 50, "CCS, Type 2", "24/7", "2 available"),
-    ChargerStation("EcoCharge Station", "DC Fast", "Chandivali, Mumbai", 2.1, 7, 19, 4.5, 112, 60, "CCS, CHAdeMO", "24/7", "4 available"),
-    ChargerStation("ChargeZone DC Fast", "DC Fast", "Saki Naka, Mumbai", 2.6, 8, 22, 4.2, 78, 100, "CCS, CHAdeMO", "24/7", "Full", isFull = true)
+    ChargerStation(
+        name = "GreenCharge Station",
+        type = "DC Fast",
+        location = "Bandra Kurla Complex, Mumbai",
+        distanceKm = 0.8,
+        etaMin = 3,
+        pricePerKwh = 20,
+        rating = 4.6,
+        reviewCount = 128,
+        maxSpeedKw = 60,
+        connectors = "CCS, CHAdeMO",
+        hours = "24/7",
+        availability = "3 available",
+        slots = listOf(
+            ChargingSlot(1, true, "CCS (60kW)", "Available: 2:30 PM to 3:00 PM"),
+            ChargingSlot(2, false, "CCS (60kW)", "Busy: 2:15 PM to 3:30 PM"),
+            ChargingSlot(3, true, "CHAdeMO (50kW)", "Available: 3:00 PM to 3:30 PM"),
+            ChargingSlot(4, true, "CCS (60kW)", "Available: 3:30 PM to 4:00 PM")
+        )
+    ),
+    ChargerStation(
+        name = "VoltPoint Hub",
+        type = "DC Fast",
+        location = "Powai, Mumbai",
+        distanceKm = 1.4,
+        etaMin = 5,
+        pricePerKwh = 18,
+        rating = 4.4,
+        reviewCount = 96,
+        maxSpeedKw = 50,
+        connectors = "CCS, Type 2",
+        hours = "24/7",
+        availability = "2 available",
+        slots = listOf(
+            ChargingSlot(1, true, "CCS (50kW)", "Available: 2:45 PM to 3:45 PM"),
+            ChargingSlot(2, false, "Type 2 (22kW)", "Busy: 2:30 PM to 5:00 PM"),
+            ChargingSlot(3, true, "CCS (50kW)", "Available: 3:45 PM to 4:45 PM")
+        )
+    ),
+    ChargerStation(
+        name = "EcoCharge Station",
+        type = "DC Fast",
+        location = "Chandivali, Mumbai",
+        distanceKm = 2.1,
+        etaMin = 7,
+        pricePerKwh = 19,
+        rating = 4.5,
+        reviewCount = 112,
+        maxSpeedKw = 60,
+        connectors = "CCS, CHAdeMO",
+        hours = "24/7",
+        availability = "4 available",
+        slots = listOf(
+            ChargingSlot(1, true, "CCS (60kW)", "Available: 2:00 PM to 3:00 PM"),
+            ChargingSlot(2, true, "CCS (60kW)", "Available: 3:00 PM to 4:00 PM"),
+            ChargingSlot(3, true, "CHAdeMO (50kW)", "Available: 4:15 PM to 5:15 PM"),
+            ChargingSlot(4, true, "CCS (60kW)", "Available: 5:15 PM to 6:15 PM")
+        )
+    ),
+    ChargerStation(
+        name = "ChargeZone DC Fast",
+        type = "DC Fast",
+        location = "Saki Naka, Mumbai",
+        distanceKm = 2.6,
+        etaMin = 8,
+        pricePerKwh = 22,
+        rating = 4.2,
+        reviewCount = 78,
+        maxSpeedKw = 100,
+        connectors = "CCS, CHAdeMO",
+        hours = "24/7",
+        availability = "Full",
+        isFull = true,
+        slots = listOf(
+            ChargingSlot(1, false, "CCS (100kW)", "Busy: 2:40 PM to 3:00 PM"),
+            ChargingSlot(2, false, "CCS (100kW)", "Busy: 2:45 PM to 3:15 PM")
+        )
+    )
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NearbyChargersScreen(onBack: () -> Unit) {
+fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -96,7 +179,7 @@ fun NearbyChargersScreen(onBack: () -> Unit) {
                     }
                 }
                 items(sampleStations) { station ->
-                    StationCard(station)
+                    StationCard(station, onClick = { onNavigate(Screen.StationDetail.createRoute(station.name)) })
                 }
             }
         }
@@ -104,7 +187,7 @@ fun NearbyChargersScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun StationCard(station: ChargerStation) {
+fun StationCard(station: ChargerStation, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -147,7 +230,7 @@ fun StationCard(station: ChargerStation) {
                     Text(station.hours, fontSize = 12.sp, color = Color.Gray)
                 }
                 Button(
-                    onClick = { },
+                    onClick = onClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
