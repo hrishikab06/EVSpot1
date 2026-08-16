@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -16,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.model.ChargingSpot
 import com.example.evspot.model.MapConfig
 import com.example.evspot.ui.screens.MapScreen
 import com.google.android.gms.location.LocationServices
@@ -31,13 +33,27 @@ fun ChargingMap(
     bottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
     useMock: Boolean = false,
     isLiteMode: Boolean = false,
-    vehicleLocation: LatLng? = null
+    vehicleLocation: LatLng? = null,
+    searchCenter: LatLng? = null,
+    searchRadius: Double = MapConfig.searchRadius.toDouble(),
+    chargingSpots: List<ChargingSpot> = emptyList(),
+    onMapClick: ((LatLng) -> Unit)? = null,
+    onDeviceLocationChanged: ((LatLng) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(MapConfig.DEFAULT_LOCATION, MapConfig.defaultZoom)
+    }
+
+    // Move camera when search center changes
+    LaunchedEffect(searchCenter) {
+        searchCenter?.let {
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(it, MapConfig.defaultZoom)
+            )
+        }
     }
 
     Box(
@@ -50,7 +66,12 @@ fun ChargingMap(
                 modifier = Modifier.fillMaxSize(),
                 liteModeEnabled = isLiteMode,
                 cameraPositionState = cameraPositionState,
-                vehicleLocation = vehicleLocation
+                vehicleLocation = vehicleLocation,
+                searchCenter = searchCenter,
+                searchRadius = searchRadius,
+                chargingSpots = chargingSpots,
+                onMapClick = onMapClick,
+                onDeviceLocationChanged = onDeviceLocationChanged
             )
         }
         

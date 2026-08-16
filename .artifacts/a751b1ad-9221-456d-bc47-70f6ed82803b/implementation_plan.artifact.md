@@ -1,37 +1,36 @@
-# Implementation Plan - Vehicle Marker Integration
+# Implementation Plan - Nearby Stations Layout Fix
 
-This plan outlines the steps to display the user's EV as a visually distinct vehicle marker on the map, using the device's current location as the source.
+This plan addresses the layout compression and squeezing issues in the `Nearby Stations` screen while preserving the existing UI design.
+
+## User Review Required
+
+> [!IMPORTANT]
+> This fix only modifies the layout constraints (weights and widths) of the existing `StationCard` to ensure it uses the screen width correctly and prevents text squeezing. No visual design changes are being made.
 
 ## Proposed Changes
 
 ### UI Components
 
-#### [MODIFY] [MapScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/MapScreen.kt)
-*   Modify `MapScreen` to accept an optional `vehicleLocation: LatLng?`.
-*   Introduce internal state `deviceLocation` to track the user's current position via `FusedLocationProviderClient`.
-*   Update the `Marker` logic:
-    *   If `vehicleLocation` is provided (e.g., from a backend later), use it.
-    *   Otherwise, if `deviceLocation` is available, use it as the vehicle marker's position.
-*   Ensure the vehicle marker is visually distinguishable (e.g., using a specific color or custom icon).
-*   Remove the hardcoded fallback to `MapConfig.vehicleLocation` for the vehicle marker.
-
 #### [MODIFY] [NearbyChargersScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/NearbyChargersScreen.kt)
-*   Replace "Map goes here" placeholder with `ChargingMap` to reuse the vehicle marker logic.
 
-#### [MODIFY] [PlanTripScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/PlanTripScreen.kt)
-*   Replace `MapPlaceholder` with `ChargingMap` to provide consistent vehicle marker functionality.
+*   **`StationCard` Refactoring (Layout Constraints only):**
+    *   In the top `Row` of the card, add `Modifier.weight(1f)` to the left `Column` (containing the station name, location, and distance). This ensures the left column takes up all available space and correctly wraps text, while pushing the right column (availability, price, rating) to the end without being squeezed.
+    *   Add a small end padding to the left `Column` to prevent text from touching the right-side components.
+    *   In the bottom `Row` of the card, add `Modifier.weight(1f)` to the inner `Row` (containing power, connectors, and hours). This prevents the "View Details" button from being pushed off-screen or squeezed by long metadata text.
+    *   Ensure all `Text` components use idiomatic wrapping behavior by removing any unintended width constraints.
 
-### Models
-
-#### [MODIFY] [MapConfig.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/model/MapConfig.kt)
-*   Clean up `vehicleLocation` if it's no longer needed as a hardcoded value, or repurpose it as a nullable field for clarity.
+*   **`NearbyStationsSheetContent` Verification:**
+    *   Confirm the `LazyColumn` and `StationCard` correctly fill the maximum width provided by the `BottomSheetScaffold`.
 
 ## Verification Plan
 
 ### Automated Tests
-*   Run `gradlew assembleDebug` to ensure the project builds successfully.
+*   Run `gradlew :app:assembleDebug` to verify the build.
 
 ### Manual Verification
-*   Verify that upon granting location permissions, a vehicle marker appears at the current device location.
-*   Verify that the vehicle marker looks different from the charging station markers.
-*   Ensure the "My Location" blue dot (if enabled) and the Vehicle Marker are coordinated.
+*   Open the "Find Nearby" screen.
+*   Verify that charging station cards occupy the full width of the screen (minus standard margins).
+*   Verify that long station names and addresses wrap correctly over multiple lines instead of squeezing into a narrow column.
+*   Verify that the price, rating, and availability information on the right side of the card are correctly aligned to the end and not overlapping with the station name.
+*   Verify that the "View Details" button is clearly visible and correctly positioned at the bottom-right of the card.
+*   Confirm that the map and Places API functionality are still active and working.

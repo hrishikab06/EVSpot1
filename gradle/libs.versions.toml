@@ -39,6 +39,7 @@ play-services-location = { group = "com.google.android.gms", name = "play-servic
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 google-places = { group = "com.google.android.libraries.places", name = "places", version.ref = "places" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version = "1.7.3" }
 
 
 [plugins]

@@ -10,5 +10,5 @@ object MapConfig {
     val defaultZoom = 14f
     
     // Search radius for charging stations (in meters)
-    val searchRadius = 2000 
+    val searchRadius = 10000 
 }

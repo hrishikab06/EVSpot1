@@ -1,27 +1,21 @@
-# Walkthrough - Vehicle Marker Integration
+# Walkthrough - Nearby Stations Layout Fix
 
-I have extended the map implementation to display a visually distinct vehicle marker at the user's current location across all map-enabled screens.
+I have fixed the layout compression issues in the `Nearby Stations` screen. The charging station cards now use the full available screen width correctly, and text wraps as expected without squeezing the metadata or buttons.
 
 ## Changes Made
 
-### 1. `MapConfig.kt`
-*   Removed the hardcoded `vehicleLocation` to favor dynamic location sources.
-
-### 2. `MapScreen.kt`
-*   Added `vehicleLocation: LatLng?` parameter to allow for backend GPS overrides in the future.
-*   Added `deviceLocation` state to track the real-time position of the device.
-*   Updated the vehicle marker to use `vehicleLocation` if provided, otherwise `deviceLocation`, with a final fallback to Singapore.
-*   The vehicle marker uses `BitmapDescriptorFactory.HUE_AZURE` to distinguish it from red charging station markers.
-
-### 3. `ChargingMap.kt`
-*   Exposed `vehicleLocation` parameter and passed it down to `MapScreen`.
-
-### 4. `NearbyChargersScreen.kt` & `PlanTripScreen.kt`
-*   Replaced the "Map goes here" and "Map Preview" placeholders with the live `ChargingMap` component.
-*   This ensures the vehicle marker and "My Location" functionality are consistent across the entire app.
+### 1. `NearbyChargersScreen.kt`
+*   **StationCard Layout Fixes**:
+    *   Added `Modifier.weight(1f)` to the left-side `Column` in the main card row. This ensures the station name, location, and distance information take up the available horizontal space and wrap properly, preventing the "squeezed" appearance.
+    *   Added `Modifier.weight(1f, fill = false)` to the station name `Text` component to handle long names gracefully while keeping the type badge visible.
+    *   Added `Modifier.weight(1f)` to the metadata `Row` (power, connectors, hours) to ensure the "View Details" button is correctly positioned at the end of the card and not pushed off-screen.
+    *   Used `Modifier.alignByBaseline()` for the metadata text components to ensure consistent vertical alignment across different font sizes.
+    *   Added `PaddingValues` to the "View Details" button to ensure it maintains its proportion while occupying the correct space.
+    *   Preserved all existing visual styles, colors, icons, and typography as per the reference design.
 
 ## Verification Results
-*   **Build**: `gradlew :app:assembleDebug` finished successfully.
-*   **Data Separation**: The vehicle marker logic is decoupled from the UI, accepting coordinates as optional parameters.
-*   **Visual Distinction**: The Azure vehicle marker stands out clearly from the standard red markers.
-*   **Reuse**: The unified `MapScreen` implementation is now used in all three primary map surfaces (Home, Nearby, Trip Planner).
+*   **Build**: `gradlew :app:assembleDebug` completed successfully.
+*   **Functionality**:
+    *   The map functionality (current location, Places API results, markers, search radius) remains fully intact.
+    *   The bottom sheet interaction and expandable map behavior are preserved.
+    *   The layout is now responsive and handles long text strings without vertical character wrapping.
