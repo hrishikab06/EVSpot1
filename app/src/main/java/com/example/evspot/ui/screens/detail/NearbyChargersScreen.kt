@@ -21,33 +21,25 @@ import androidx.compose.ui.unit.sp
 import com.example.evspot.data.PlacesRepository
 import com.example.evspot.model.ChargingSpot
 import com.example.evspot.model.MapConfig
+import com.example.evspot.model.ChargerStation
+import com.example.evspot.model.ChargingSlot
+import com.example.evspot.model.sampleStations
 import com.example.evspot.ui.components.ChargingMap
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
+import kotlin.math.*
 
-data class ChargingSlot(
-    val id: Int,
-    val isAvailable: Boolean,
-    val type: String,
-    val statusText: String? = null // e.g., "Ready" or "Available until 5 PM" or "Available in 15 min"
-)
+fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val r = 6371 // Radius of the earth
+    val latDistance = Math.toRadians(lat2 - lat1)
+    val lonDistance = Math.toRadians(lon2 - lon1)
+    val a = sin(latDistance / 2) * sin(latDistance / 2) +
+            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+            sin(lonDistance / 2) * sin(lonDistance / 2)
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return r * c
+}
 
-data class ChargerStation(
-    val name: String,
-    val type: String,
-    val location: String,
-    val distanceKm: Double,
-    val etaMin: Int,
-    val pricePerKwh: Int,
-    val rating: Double,
-    val reviewCount: Int,
-    val maxSpeedKw: Int,
-    val connectors: String,
-    val hours: String,
-    val availability: String,
-    val isFull: Boolean = false,
-    val slots: List<ChargingSlot> = emptyList()
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,35 +55,46 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    val activeSearchCenter = searchCenter ?: deviceLocation
+    val activeSearchCenter = searchCenter ?: deviceLocation ?: MapConfig.DEFAULT_LOCATION
 
     LaunchedEffect(activeSearchCenter) {
-        activeSearchCenter?.let { center ->
-            isLoading = true
-            chargingSpots = placesRepository.searchChargingStations(
-                center,
-                MapConfig.searchRadius.toDouble()
-            )
-            isLoading = false
-        }
+        isLoading = true
+        chargingSpots = placesRepository.searchChargingStations(
+            activeSearchCenter,
+            MapConfig.searchRadius.toDouble()
+        )
+        isLoading = false
     }
 
     // Convert ChargingSpot to ChargerStation for the list UI
-    val chargerStations = chargingSpots.map { spot ->
-        ChargerStation(
-            name = spot.name,
-            type = "EV Charging",
-            location = spot.address,
-            distanceKm = 0.0, // We could calculate this
-            etaMin = 0,
-            pricePerKwh = 15, // Dummy
-            rating = 4.5, // Dummy
-            reviewCount = 50, // Dummy
-            maxSpeedKw = 50, // Dummy
-            connectors = "CCS2", // Dummy
-            hours = "24/7",
-            availability = "Available"
-        )
+    val chargerStations = remember(chargingSpots, deviceLocation) {
+        val list = chargingSpots.map { spot ->
+            val distance = deviceLocation?.let {
+                calculateDistance(it.latitude, it.longitude, spot.position.latitude, spot.position.longitude)
+            } ?: 0.0
+            
+            ChargerStation(
+                name = spot.name,
+                type = "EV Charging",
+                location = spot.address,
+                distanceKm = (distance * 10).toInt() / 10.0,
+                etaMin = (distance * 2).toInt(),
+                pricePerKwh = 15,
+                rating = 4.5,
+                reviewCount = 50,
+                maxSpeedKw = 50,
+                connectors = "CCS2",
+                hours = "24/7",
+                availability = "Available"
+            )
+        }
+        
+        // If no nearby real stations, show sample stations as fallback for demo
+        if (list.isEmpty() && !isLoading) {
+            sampleStations
+        } else {
+            list.sortedBy { it.distanceKm }
+        }
     }
 
     BottomSheetScaffold(

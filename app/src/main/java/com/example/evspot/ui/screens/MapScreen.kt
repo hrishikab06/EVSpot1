@@ -13,12 +13,17 @@ import androidx.core.content.ContextCompat
 import com.example.evspot.model.ChargingSpot
 import com.example.evspot.model.MapConfig
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMapOptions
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun MapScreen(
@@ -36,6 +41,7 @@ fun MapScreen(
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val scope = rememberCoroutineScope()
 
     var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
     
@@ -68,22 +74,43 @@ fun MapScreen(
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission) {
             try {
+                // Try getting last known location first
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     location?.let {
                         val latLng = LatLng(it.latitude, it.longitude)
                         deviceLocation = latLng
                         onDeviceLocationChanged?.invoke(latLng)
-                        // Only move camera if we don't have a search center yet
                         if (searchCenter == null) {
-                            cameraPositionState.move(
-                                CameraUpdateFactory.newLatLngZoom(
-                                    latLng,
-                                    MapConfig.defaultZoom
-                                )
-                            )
+                            cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(latLng, MapConfig.defaultZoom))
                         }
                     }
                 }
+                
+                // Request a fresh location update
+                val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+                    .setWaitForAccurateLocation(false)
+                    .setMinUpdateIntervalMillis(3000)
+                    .setMaxUpdates(1)
+                    .build()
+
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    object : LocationCallback() {
+                        override fun onLocationResult(result: LocationResult) {
+                            result.lastLocation?.let { location ->
+                                val latLng = LatLng(location.latitude, location.longitude)
+                                deviceLocation = latLng
+                                onDeviceLocationChanged?.invoke(latLng)
+                                if (searchCenter == null) {
+                                    scope.launch {
+                                        cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, MapConfig.defaultZoom))
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    context.mainLooper
+                )
             } catch (e: SecurityException) {
                 // Permission not granted
             }
