@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.example.evspot.model.ChargingSpot
 import com.example.evspot.model.MapConfig
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMapOptions
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -21,9 +23,14 @@ import com.google.maps.android.compose.*
 fun MapScreen(
     modifier: Modifier = Modifier,
     chargingSpots: List<ChargingSpot> = mockChargingSpots,
-    liteModeEnabled: Boolean = false
+    liteModeEnabled: Boolean = false,
+    cameraPositionState: CameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(MapConfig.DEFAULT_LOCATION, MapConfig.defaultZoom)
+    }
 ) {
     val context = LocalContext.current
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -50,8 +57,23 @@ fun MapScreen(
         }
     }
 
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(MapConfig.vehicleLocation, MapConfig.defaultZoom)
+    LaunchedEffect(hasLocationPermission) {
+        if (hasLocationPermission) {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        cameraPositionState.move(
+                            CameraUpdateFactory.newLatLngZoom(
+                                LatLng(it.latitude, it.longitude),
+                                MapConfig.defaultZoom
+                            )
+                        )
+                    }
+                }
+            } catch (e: SecurityException) {
+                // Permission not granted
+            }
+        }
     }
 
     val mapProperties by remember(hasLocationPermission) {
@@ -71,7 +93,7 @@ fun MapScreen(
         },
         uiSettings = MapUiSettings(myLocationButtonEnabled = hasLocationPermission)
     ) {
-        // Vehicle Marker
+        // Vehicle Marker (Mocking its position at the default location for now)
         Marker(
             state = MarkerState(position = MapConfig.vehicleLocation),
             title = "My Vehicle",

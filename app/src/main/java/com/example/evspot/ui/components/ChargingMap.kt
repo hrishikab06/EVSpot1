@@ -7,13 +7,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.model.MapConfig
 import com.example.evspot.ui.screens.MapScreen
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.launch
 
 @Composable
 fun ChargingMap(
@@ -22,6 +32,13 @@ fun ChargingMap(
     useMock: Boolean = false,
     isLiteMode: Boolean = false
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(MapConfig.DEFAULT_LOCATION, MapConfig.defaultZoom)
+    }
+
     Box(
         modifier = modifier.fillMaxSize()
     ) {
@@ -30,12 +47,30 @@ fun ChargingMap(
         } else {
             MapScreen(
                 modifier = Modifier.fillMaxSize(),
-                liteModeEnabled = isLiteMode
+                liteModeEnabled = isLiteMode,
+                cameraPositionState = cameraPositionState
             )
         }
         
         FloatingActionButton(
-            onClick = { /* Handle my location */ },
+            onClick = {
+                try {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                        location?.let {
+                            coroutineScope.launch {
+                                cameraPositionState.animate(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(it.latitude, it.longitude),
+                                        MapConfig.defaultZoom
+                                    )
+                                )
+                            }
+                        }
+                    }
+                } catch (e: SecurityException) {
+                    // Handled by permission logic in MapScreen
+                }
+            },
             modifier = Modifier
                 .padding(bottom = 16.dp + bottomPadding, end = 16.dp)
                 .size(48.dp)
