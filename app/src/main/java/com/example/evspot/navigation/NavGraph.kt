@@ -8,6 +8,7 @@ import com.example.evspot.ui.screens.*
 import com.example.evspot.ui.screens.auth.*
 import com.example.evspot.ui.screens.detail.*
 import com.example.evspot.ui.screens.VehicleViewModel
+import com.example.evspot.ui.UserViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
@@ -15,6 +16,7 @@ import androidx.navigation.NavType
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     val vehicleViewModel: VehicleViewModel = viewModel()
+    val userViewModel: UserViewModel = viewModel()
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
@@ -28,6 +30,12 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(Screen.Account.route) {
             AccountScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Screen.Notifications.route) {
+            NotificationScreen(
+                viewModel = userViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(Screen.Login.route) {
@@ -95,10 +103,17 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
         composable(Screen.History.route) { 
-            ChargingHistoryScreen(onBack = { navController.popBackStack() }) 
+            ChargingHistoryScreen(
+                onBack = { navController.popBackStack() },
+                viewModel = userViewModel
+            ) 
         }
         composable(Screen.UpcomingBookings.route) { 
-            UpcomingBookingsScreen(onBack = { navController.popBackStack() }) 
+            UpcomingBookingsScreen(
+                onBack = { navController.popBackStack() },
+                onNavigate = { route -> navController.navigate(route) },
+                viewModel = userViewModel
+            ) 
         }
         composable(Screen.Usage.route) { 
             EnergyUsageScreen(onBack = { navController.popBackStack() }) 
@@ -107,7 +122,10 @@ fun AppNavGraph(navController: NavHostController) {
             VehicleHealthScreen(onBack = { navController.popBackStack() }) 
         }
         composable(Screen.PastTrips.route) {
-            PastTripsScreen(onBackClick = { navController.popBackStack() })
+            PastTripsScreen(
+                onBackClick = { navController.popBackStack() },
+                viewModel = userViewModel
+            )
         }
         composable(Screen.AddVehicle.route) {
             AddVehicleScreen(

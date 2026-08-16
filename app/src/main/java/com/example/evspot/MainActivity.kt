@@ -29,7 +29,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.navigation.compose.rememberNavController
 import com.example.evspot.navigation.AppNavGraph
+import com.example.evspot.ui.UserViewModel
+import com.example.evspot.ui.screens.VehicleViewModel
+import com.example.evspot.MyVehiclesScreen
+import com.example.evspot.ui.screens.detail.ChargingHistoryScreen
 import com.example.evspot.ui.theme.EVSpotTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +59,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun EVSpotApp() {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.BOOKINGS) }
+    val userViewModel: UserViewModel = viewModel()
+    val vehicleViewModel: VehicleViewModel = viewModel()
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -74,8 +81,12 @@ fun EVSpotApp() {
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             when (val dest = currentDestination) {
-                AppDestinations.BOOKINGS -> ChargingHistoryScreen()
-                AppDestinations.VEHICLE -> MyVehiclesScreen(onAddVehicleClick = {})
+                AppDestinations.BOOKINGS -> ChargingHistoryScreen(onBack = {}, viewModel = userViewModel)
+                AppDestinations.VEHICLE -> MyVehiclesScreen(
+                    onAddVehicleClick = {},
+                    onNavigate = { /* TODO: navigation logic */ },
+                    viewModel = vehicleViewModel
+                )
                 AppDestinations.MAP -> PlanTripScreen()
                 else -> Greeting(
                     name = dest.label,

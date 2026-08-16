@@ -26,9 +26,9 @@ data class ChargerStation(
 
 val sampleStations = listOf(
     ChargerStation(
-        name = "Koramangala EV Hub",
+        name = "BKC EV Hub",
         type = "Superfast",
-        location = "8th Block, Koramangala",
+        location = "G Block, BKC, Mumbai",
         distanceKm = 1.2,
         etaMin = 5,
         pricePerKwh = 18,
@@ -46,9 +46,9 @@ val sampleStations = listOf(
         )
     ),
     ChargerStation(
-        name = "Indiranagar Charging Point",
+        name = "Powai Charging Point",
         type = "Fast",
-        location = "100 Feet Rd, Indiranagar",
+        location = "Central Ave, Hiranandani, Mumbai",
         distanceKm = 4.5,
         etaMin = 15,
         pricePerKwh = 15,
@@ -61,6 +61,25 @@ val sampleStations = listOf(
         slots = listOf(
             ChargingSlot(1, true, "CCS2 - 50kW", "Ready to charge"),
             ChargingSlot(2, false, "Type 2 - 22kW", "Occupied (ETA 10 min)")
+        )
+    ),
+    ChargerStation(
+        name = "Worli Seaface Charger",
+        type = "Superfast",
+        location = "Dr Annie Besant Rd, Worli",
+        distanceKm = 8.2,
+        etaMin = 25,
+        pricePerKwh = 20,
+        rating = 4.7,
+        reviewCount = 56,
+        maxSpeedKw = 150,
+        connectors = "CCS2",
+        hours = "24/7",
+        availability = "3/3 Available",
+        slots = listOf(
+            ChargingSlot(1, true, "CCS2 - 150kW", "Ready to charge"),
+            ChargingSlot(2, true, "CCS2 - 150kW", "Ready to charge"),
+            ChargingSlot(3, true, "CCS2 - 150kW", "Ready to charge")
         )
     )
 )
