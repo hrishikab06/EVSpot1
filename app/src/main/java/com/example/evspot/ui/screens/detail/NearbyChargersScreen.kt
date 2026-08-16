@@ -1,4 +1,5 @@
 package com.example.evspot.ui.screens.detail
+import com.example.evspot.navigation.Screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,6 +24,13 @@ import com.example.evspot.ui.components.ChargingMap
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
 
+data class ChargingSlot(
+    val id: Int,
+    val isAvailable: Boolean,
+    val type: String,
+    val statusText: String? = null // e.g., "Ready" or "Available until 5 PM" or "Available in 15 min"
+)
+
 data class ChargerStation(
     val name: String,
     val type: String,
@@ -36,7 +44,8 @@ data class ChargerStation(
     val connectors: String,
     val hours: String,
     val availability: String,
-    val isFull: Boolean = false
+    val isFull: Boolean = false,
+    val slots: List<ChargingSlot> = emptyList()
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,6 +107,7 @@ fun NearbyChargersScreen(onBack: () -> Unit) {
         sheetContent = {
             NearbyStationsSheetContent(chargerStations, isLoading)
         },
+
         topBar = {
             TopAppBar(
                 title = { Text("Nearby Charging Stations") },
@@ -185,7 +195,11 @@ fun NearbyChargersScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun NearbyStationsSheetContent(stations: List<ChargerStation>, isLoading: Boolean) {
+fun NearbyStationsSheetContent(
+    stations: List<ChargerStation>, 
+    isLoading: Boolean, 
+    onNavigate: (String) -> Unit // Added navigation callback parameter
+) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -207,6 +221,16 @@ fun NearbyStationsSheetContent(stations: List<ChargerStation>, isLoading: Boolea
                 }
             }
         } else {
+            // Loop through your live API stations list instead of the dummy list
+            items(stations) { station ->
+                StationCard(station, onClick = { onNavigate("station_detail/${station.name}") })
+            }
+        }
+    }
+}
+                }
+            }
+        } else {
             items(stations) { station ->
                 StationCard(station)
             }
@@ -219,7 +243,7 @@ fun NearbyStationsSheetContent(stations: List<ChargerStation>, isLoading: Boolea
 }
 
 @Composable
-fun StationCard(station: ChargerStation) {
+fun StationCard(station: ChargerStation, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -305,7 +329,7 @@ fun StationCard(station: ChargerStation) {
                     )
                 }
                 Button(
-                    onClick = { },
+                    onClick = onClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9)),
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
