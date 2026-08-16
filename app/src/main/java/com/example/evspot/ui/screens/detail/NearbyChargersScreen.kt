@@ -9,13 +9,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.data.PlacesRepository
+import com.example.evspot.model.ChargingSpot
+import com.example.evspot.model.MapConfig
+import com.example.evspot.ui.components.ChargingMap
+import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.launch
 
 data class ChargingSlot(
     val id: Int,
@@ -41,91 +48,66 @@ data class ChargerStation(
     val slots: List<ChargingSlot> = emptyList()
 )
 
-val sampleStations = listOf(
-    ChargerStation(
-        name = "GreenCharge Station",
-        type = "DC Fast",
-        location = "Bandra Kurla Complex, Mumbai",
-        distanceKm = 0.8,
-        etaMin = 3,
-        pricePerKwh = 20,
-        rating = 4.6,
-        reviewCount = 128,
-        maxSpeedKw = 60,
-        connectors = "CCS, CHAdeMO",
-        hours = "24/7",
-        availability = "3 available",
-        slots = listOf(
-            ChargingSlot(1, true, "CCS (60kW)", "Available: 2:30 PM to 3:00 PM"),
-            ChargingSlot(2, false, "CCS (60kW)", "Busy: 2:15 PM to 3:30 PM"),
-            ChargingSlot(3, true, "CHAdeMO (50kW)", "Available: 3:00 PM to 3:30 PM"),
-            ChargingSlot(4, true, "CCS (60kW)", "Available: 3:30 PM to 4:00 PM")
-        )
-    ),
-    ChargerStation(
-        name = "VoltPoint Hub",
-        type = "DC Fast",
-        location = "Powai, Mumbai",
-        distanceKm = 1.4,
-        etaMin = 5,
-        pricePerKwh = 18,
-        rating = 4.4,
-        reviewCount = 96,
-        maxSpeedKw = 50,
-        connectors = "CCS, Type 2",
-        hours = "24/7",
-        availability = "2 available",
-        slots = listOf(
-            ChargingSlot(1, true, "CCS (50kW)", "Available: 2:45 PM to 3:45 PM"),
-            ChargingSlot(2, false, "Type 2 (22kW)", "Busy: 2:30 PM to 5:00 PM"),
-            ChargingSlot(3, true, "CCS (50kW)", "Available: 3:45 PM to 4:45 PM")
-        )
-    ),
-    ChargerStation(
-        name = "EcoCharge Station",
-        type = "DC Fast",
-        location = "Chandivali, Mumbai",
-        distanceKm = 2.1,
-        etaMin = 7,
-        pricePerKwh = 19,
-        rating = 4.5,
-        reviewCount = 112,
-        maxSpeedKw = 60,
-        connectors = "CCS, CHAdeMO",
-        hours = "24/7",
-        availability = "4 available",
-        slots = listOf(
-            ChargingSlot(1, true, "CCS (60kW)", "Available: 2:00 PM to 3:00 PM"),
-            ChargingSlot(2, true, "CCS (60kW)", "Available: 3:00 PM to 4:00 PM"),
-            ChargingSlot(3, true, "CHAdeMO (50kW)", "Available: 4:15 PM to 5:15 PM"),
-            ChargingSlot(4, true, "CCS (60kW)", "Available: 5:15 PM to 6:15 PM")
-        )
-    ),
-    ChargerStation(
-        name = "ChargeZone DC Fast",
-        type = "DC Fast",
-        location = "Saki Naka, Mumbai",
-        distanceKm = 2.6,
-        etaMin = 8,
-        pricePerKwh = 22,
-        rating = 4.2,
-        reviewCount = 78,
-        maxSpeedKw = 100,
-        connectors = "CCS, CHAdeMO",
-        hours = "24/7",
-        availability = "Full",
-        isFull = true,
-        slots = listOf(
-            ChargingSlot(1, false, "CCS (100kW)", "Busy: 2:40 PM to 3:00 PM"),
-            ChargingSlot(2, false, "CCS (100kW)", "Busy: 2:45 PM to 3:15 PM")
-        )
-    )
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
-    Scaffold(
+fun NearbyChargersScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val placesRepository = remember { PlacesRepository(context) }
+    
+    val scaffoldState = rememberBottomSheetScaffoldState()
+    
+    var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
+    var searchCenter by remember { mutableStateOf<LatLng?>(null) }
+    var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val activeSearchCenter = searchCenter ?: deviceLocation
+
+    LaunchedEffect(activeSearchCenter) {
+        activeSearchCenter?.let { center ->
+            isLoading = true
+            chargingSpots = placesRepository.searchChargingStations(
+                center,
+                MapConfig.searchRadius.toDouble()
+            )
+            isLoading = false
+        }
+    }
+
+    // Convert ChargingSpot to ChargerStation for the list UI
+    val chargerStations = chargingSpots.map { spot ->
+        ChargerStation(
+            name = spot.name,
+            type = "EV Charging",
+            location = spot.address,
+            distanceKm = 0.0, // We could calculate this
+            etaMin = 0,
+            pricePerKwh = 15, // Dummy
+            rating = 4.5, // Dummy
+            reviewCount = 50, // Dummy
+            maxSpeedKw = 50, // Dummy
+            connectors = "CCS2", // Dummy
+            hours = "24/7",
+            availability = "Available"
+        )
+    }
+
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetPeekHeight = 320.dp,
+        sheetContainerColor = Color.White,
+        sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        sheetShadowElevation = 16.dp,
+        sheetDragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = Color.LightGray.copy(alpha = 0.5f)
+            )
+        },
+        sheetContent = {
+            NearbyStationsSheetContent(chargerStations, isLoading)
+        },
+
         topBar = {
             TopAppBar(
                 title = { Text("Nearby Charging Stations") },
@@ -133,55 +115,129 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White.copy(alpha = 0.9f)
+                )
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
-                    placeholder = { Text("Search location or station") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-                OutlinedButton(onClick = { }) {
-                    Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Filter")
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // Map Background
+            ChargingMap(
+                modifier = Modifier.fillMaxSize(),
+                bottomPadding = 320.dp,
+                searchCenter = activeSearchCenter,
+                chargingSpots = chargingSpots,
+                onDeviceLocationChanged = { loc ->
+                    if (deviceLocation == null) {
+                        deviceLocation = loc
+                    }
+                },
+                onMapClick = { loc ->
+                    searchCenter = loc
                 }
-            }
+            )
 
-            Box(
+            // Floating Search Bar
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
-                    .background(Color(0xFFEFEFEF)),
-                contentAlignment = Alignment.Center
+                    .padding(16.dp)
             ) {
-                Text("Map goes here", color = Color.Gray, fontSize = 13.sp)
-            }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Column {
-                        Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("Within 5 km radius", fontSize = 12.sp, color = Color.Gray)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = if (searchCenter != null) "Selected Location" else "Current Location",
+                        onValueChange = { },
+                        readOnly = true,
+                        placeholder = { Text("Search location or station") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (searchCenter != null) {
+                                IconButton(onClick = { searchCenter = null }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear search")
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedBorderColor = Color(0xFF2E7D32)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedButton(
+                        onClick = { /* TODO: Open Filter */ },
+                        modifier = Modifier.height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                    ) {
+                        Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Filter")
                     }
                 }
-                items(sampleStations) { station ->
-                    StationCard(station, onClick = { onNavigate(Screen.StationDetail.createRoute(station.name)) })
+            }
+            
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color(0xFF2E7D32)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun NearbyStationsSheetContent(
+    stations: List<ChargerStation>, 
+    isLoading: Boolean, 
+    onNavigate: (String) -> Unit // Added navigation callback parameter
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Column {
+                Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                val radiusKm = MapConfig.searchRadius / 1000
+                Text("Within $radiusKm km radius", fontSize = 12.sp, color = Color.Gray)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+        
+        if (stations.isEmpty() && !isLoading) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text("No charging stations found in this area.", color = Color.Gray)
                 }
             }
+        } else {
+            // Loop through your live API stations list instead of the dummy list
+            items(stations) { station ->
+                StationCard(station, onClick = { onNavigate("station_detail/${station.name}") })
+            }
+        }
+    }
+}
+                }
+            }
+        } else {
+            items(stations) { station ->
+                StationCard(station)
+            }
+        }
+        
+        item {
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -194,17 +250,34 @@ fun StationCard(station: ChargerStation, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(station.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(
+                            station.name,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFE8F5E9)) {
-                            Text(station.type, fontSize = 10.sp, color = Color(0xFF2E7D32), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            Text(
+                                station.type,
+                                fontSize = 10.sp,
+                                color = Color(0xFF2E7D32),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
                         }
                     }
                     Text(station.location, fontSize = 12.sp, color = Color.Gray)
-                    Text("${station.distanceKm} km • ${station.etaMin} min", fontSize = 12.sp, color = Color.Gray)
+                    Text(
+                        "${station.distanceKm} km • ${station.etaMin} min",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Surface(
@@ -218,21 +291,48 @@ fun StationCard(station: ChargerStation, onClick: () -> Unit) {
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
-                    Text("₹${station.pricePerKwh}/kWh", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text("★ ${station.rating} (${station.reviewCount})", fontSize = 11.sp, color = Color.Gray)
+                    Text(
+                        "₹${station.pricePerKwh}/kWh",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        "★ ${station.rating} (${station.reviewCount})",
+                        fontSize = 11.sp,
+                        color = Color.Gray
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Row {
-                    Text("${station.maxSpeedKw} kW  ", fontSize = 12.sp)
-                    Text("${station.connectors}  ", fontSize = 12.sp, color = Color.Gray)
-                    Text(station.hours, fontSize = 12.sp, color = Color.Gray)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                    Text(
+                        "${station.maxSpeedKw} kW  ",
+                        fontSize = 12.sp,
+                        modifier = Modifier.alignByBaseline()
+                    )
+                    Text(
+                        "${station.connectors}  ",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.alignByBaseline()
+                    )
+                    Text(
+                        station.hours,
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.alignByBaseline()
+                    )
                 }
                 Button(
                     onClick = onClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9)),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                 ) {
                     Text("View Details", color = Color(0xFF2E7D32), fontSize = 12.sp)
                 }
