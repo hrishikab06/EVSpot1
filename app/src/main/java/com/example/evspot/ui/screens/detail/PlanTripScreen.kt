@@ -21,7 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.evspot.ui.components.ChargingMap
 import com.example.evspot.ui.theme.EVSpotTheme
 
 data class TripFilter(
@@ -220,6 +219,7 @@ fun TripFilterChips(filters: List<TripFilter>) {
 
 @Composable
 fun MapPlaceholder() {
+    // TODO: Replace with Google Maps Compose
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -227,10 +227,22 @@ fun MapPlaceholder() {
             .background(Color(0xFFE0E0E0), RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center
     ) {
-        ChargingMap(
-            modifier = Modifier.fillMaxSize(),
-            isLiteMode = true
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+            Text(text = "Map Preview", color = Color.Gray)
+        }
+        // Small floating zoom/locate button logic could go here
+        Surface(
+            shape = CircleShape,
+            color = Color.White,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .size(40.dp),
+            shadowElevation = 4.dp
+        ) {
+            Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.padding(8.dp), tint = Color.Black)
+        }
     }
 }
 
