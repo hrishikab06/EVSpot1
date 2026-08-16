@@ -30,7 +30,8 @@ fun ChargingMap(
     modifier: Modifier = Modifier,
     bottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
     useMock: Boolean = false,
-    isLiteMode: Boolean = false
+    isLiteMode: Boolean = false,
+    vehicleLocation: LatLng? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -48,7 +49,8 @@ fun ChargingMap(
             MapScreen(
                 modifier = Modifier.fillMaxSize(),
                 liteModeEnabled = isLiteMode,
-                cameraPositionState = cameraPositionState
+                cameraPositionState = cameraPositionState,
+                vehicleLocation = vehicleLocation
             )
         }
         

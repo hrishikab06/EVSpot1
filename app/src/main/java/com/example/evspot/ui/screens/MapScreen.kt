@@ -24,12 +24,15 @@ fun MapScreen(
     modifier: Modifier = Modifier,
     chargingSpots: List<ChargingSpot> = mockChargingSpots,
     liteModeEnabled: Boolean = false,
+    vehicleLocation: LatLng? = null,
     cameraPositionState: CameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(MapConfig.DEFAULT_LOCATION, MapConfig.defaultZoom)
     }
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
     
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -62,9 +65,11 @@ fun MapScreen(
             try {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     location?.let {
+                        val latLng = LatLng(it.latitude, it.longitude)
+                        deviceLocation = latLng
                         cameraPositionState.move(
                             CameraUpdateFactory.newLatLngZoom(
-                                LatLng(it.latitude, it.longitude),
+                                latLng,
                                 MapConfig.defaultZoom
                             )
                         )
@@ -93,9 +98,10 @@ fun MapScreen(
         },
         uiSettings = MapUiSettings(myLocationButtonEnabled = hasLocationPermission)
     ) {
-        // Vehicle Marker (Mocking its position at the default location for now)
+        // Vehicle Marker - Uses provided location or device location, falls back to default
+        val vehiclePos = vehicleLocation ?: deviceLocation ?: MapConfig.DEFAULT_LOCATION
         Marker(
-            state = MarkerState(position = MapConfig.vehicleLocation),
+            state = MarkerState(position = vehiclePos),
             title = "My Vehicle",
             snippet = "EVSpot EV-01",
             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)

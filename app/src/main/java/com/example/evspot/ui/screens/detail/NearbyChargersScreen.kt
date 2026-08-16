@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.ui.components.ChargingMap
 
 data class ChargerStation(
     val name: String,
@@ -81,7 +82,10 @@ fun NearbyChargersScreen(onBack: () -> Unit) {
                     .background(Color(0xFFEFEFEF)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Map goes here", color = Color.Gray, fontSize = 13.sp)
+                ChargingMap(
+                    modifier = Modifier.fillMaxSize(),
+                    isLiteMode = true
+                )
             }
 
             LazyColumn(

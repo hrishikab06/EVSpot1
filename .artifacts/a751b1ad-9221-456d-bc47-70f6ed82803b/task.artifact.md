@@ -1,0 +1,6 @@
+- [x] Update `MapConfig.kt` to clean up hardcoded vehicle location
+- [x] Implement vehicle marker logic in `MapScreen.kt`
+- [x] Ensure `ChargingMap.kt` passes necessary data to `MapScreen.kt`
+- [x] Replace placeholder in `NearbyChargersScreen.kt`
+- [x] Replace placeholder in `PlanTripScreen.kt`
+- [x] Verify build and marker visibility
