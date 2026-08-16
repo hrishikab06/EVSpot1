@@ -189,7 +189,7 @@ fun TripFilterChips(filters: List<TripFilter>) {
             FilterChip(
                 selected = filter.isSelected,
                 onClick = { /* TODO */ },
-                label = { Text(filter.label) },
+                label = { Text(text = filter.label) },
                 leadingIcon = {
                     Icon(
                         imageVector = filter.icon,
@@ -468,8 +468,7 @@ fun BottomActionButtons() {
 
 val sampleFilters = listOf(
     TripFilter("Recommended", Icons.Default.AutoAwesome, isSelected = true),
-    TripFilter("Fastest", Icons.Default.Schedule),
-    TripFilter("Eco-friendly", Icons.Default.Eco)
+    TripFilter("Fastest", Icons.Default.Schedule)
 )
 
 val sampleRouteStops = listOf(

@@ -19,4 +19,9 @@ sealed class Screen(val route: String) {
     object PastTrips : Screen("past_trips")
 
     object Account : Screen("account")
+    object AddVehicle : Screen("add_vehicle")
+
+    object StationDetail : Screen("station_detail/{stationName}") {
+        fun createRoute(stationName: String) = "station_detail/$stationName"
+    }
 }

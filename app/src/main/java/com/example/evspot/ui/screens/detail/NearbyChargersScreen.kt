@@ -1,5 +1,7 @@
 package com.example.evspot.ui.screens.detail
 
+import com.example.evspot.navigation.Screen
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +25,13 @@ import com.example.evspot.ui.components.ChargingMap
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
 
+data class ChargingSlot(
+    val id: Int,
+    val isAvailable: Boolean,
+    val type: String,
+    val statusText: String? = null // e.g., "Ready" or "Available until 5 PM" or "Available in 15 min"
+)
+
 data class ChargerStation(
     val name: String,
     val type: String,
@@ -36,18 +45,19 @@ data class ChargerStation(
     val connectors: String,
     val hours: String,
     val availability: String,
-    val isFull: Boolean = false
+    val isFull: Boolean = false,
+    val slots: List<ChargingSlot> = emptyList()
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NearbyChargersScreen(onBack: () -> Unit) {
+fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val placesRepository = remember { PlacesRepository(context) }
-    
+
     val scaffoldState = rememberBottomSheetScaffoldState()
-    
+
     var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
     var searchCenter by remember { mutableStateOf<LatLng?>(null) }
     var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
@@ -96,7 +106,13 @@ fun NearbyChargersScreen(onBack: () -> Unit) {
             )
         },
         sheetContent = {
-            NearbyStationsSheetContent(chargerStations, isLoading)
+            NearbyStationsSheetContent(
+                stations = chargerStations,
+                isLoading = isLoading,
+                onStationClick = { station ->
+                    onNavigate(Screen.StationDetail.createRoute(station.name))
+                }
+            )
         },
         topBar = {
             TopAppBar(
@@ -173,7 +189,7 @@ fun NearbyChargersScreen(onBack: () -> Unit) {
                     }
                 }
             }
-            
+
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
@@ -185,7 +201,11 @@ fun NearbyChargersScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun NearbyStationsSheetContent(stations: List<ChargerStation>, isLoading: Boolean) {
+fun NearbyStationsSheetContent(
+    stations: List<ChargerStation>,
+    isLoading: Boolean,
+    onStationClick: (ChargerStation) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -199,7 +219,7 @@ fun NearbyStationsSheetContent(stations: List<ChargerStation>, isLoading: Boolea
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
-        
+
         if (stations.isEmpty() && !isLoading) {
             item {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -208,10 +228,10 @@ fun NearbyStationsSheetContent(stations: List<ChargerStation>, isLoading: Boolea
             }
         } else {
             items(stations) { station ->
-                StationCard(station)
+                StationCard(station, onClick = { onStationClick(station) })
             }
         }
-        
+
         item {
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -219,7 +239,7 @@ fun NearbyStationsSheetContent(stations: List<ChargerStation>, isLoading: Boolea
 }
 
 @Composable
-fun StationCard(station: ChargerStation) {
+fun StationCard(station: ChargerStation, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -305,7 +325,7 @@ fun StationCard(station: ChargerStation) {
                     )
                 }
                 Button(
-                    onClick = { },
+                    onClick = onClick,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9)),
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)

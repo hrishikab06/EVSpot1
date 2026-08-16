@@ -75,7 +75,7 @@ fun EVSpotApp() {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             when (val dest = currentDestination) {
                 AppDestinations.BOOKINGS -> ChargingHistoryScreen()
-                AppDestinations.VEHICLE -> MyVehiclesScreen()
+                AppDestinations.VEHICLE -> MyVehiclesScreen(onAddVehicleClick = {})
                 AppDestinations.MAP -> PlanTripScreen()
                 else -> Greeting(
                     name = dest.label,

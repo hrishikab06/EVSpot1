@@ -25,27 +25,18 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 
-enum class ConnectionStatus {
-    CONNECTED, OFFLINE
-}
-
-data class VehicleListing(
-    val id: String,
-    val name: String,
-    val model: String,
-    val plate: String,
-    val imageRes: Int,
-    val batteryPercentage: Int,
-    val estRangeKm: Int,
-    val connectionStatus: ConnectionStatus,
-    val chargingStatus: String,
-    val lastChargedInfo: String,
-    val isPrimary: Boolean = false
-)
+import com.example.evspot.data.model.ConnectionStatus
+import com.example.evspot.data.model.VehicleListing
+import com.example.evspot.ui.screens.VehicleViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyVehiclesScreen() {
+fun MyVehiclesScreen(
+    onAddVehicleClick: () -> Unit,
+    viewModel: VehicleViewModel = viewModel()
+) {
+    val vehicles = viewModel.vehicles
     Scaffold(
         topBar = {
             TopAppBar(
@@ -111,10 +102,10 @@ fun MyVehiclesScreen() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                VehiclesHeader()
+                VehiclesHeader(onAddVehicleClick)
             }
             item {
-                VehiclesSummaryCard()
+                VehiclesSummaryCard(viewModel)
             }
             item {
                 Text(
@@ -124,7 +115,7 @@ fun MyVehiclesScreen() {
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-            items(sampleVehicles) { vehicle ->
+            items(vehicles) { vehicle ->
                 VehicleCard(vehicle)
             }
             item {
@@ -135,7 +126,7 @@ fun MyVehiclesScreen() {
 }
 
 @Composable
-fun VehiclesHeader() {
+fun VehiclesHeader(onAddVehicleClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -154,7 +145,7 @@ fun VehiclesHeader() {
             )
         }
         Button(
-            onClick = { /* TODO */ },
+            onClick = onAddVehicleClick,
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
@@ -167,7 +158,7 @@ fun VehiclesHeader() {
 }
 
 @Composable
-fun VehiclesSummaryCard() {
+fun VehiclesSummaryCard(viewModel: VehicleViewModel) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -180,13 +171,13 @@ fun VehiclesSummaryCard() {
                 .padding(vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SummaryItem(Modifier.weight(1f), Icons.Outlined.DirectionsCar, "3", "Total Vehicles", Color(0xFFE8F5E9), Color(0xFF2E7D32))
+            SummaryItem(Modifier.weight(1f), Icons.Outlined.DirectionsCar, viewModel.totalVehicles.toString(), "Total Vehicles", Color(0xFFE8F5E9), Color(0xFF2E7D32))
             SummaryVerticalDivider()
-            SummaryItem(Modifier.weight(1f), Icons.Outlined.EvStation, "2", "Online", Color(0xFFE8F5E9), Color(0xFF2E7D32))
+            SummaryItem(Modifier.weight(1f), Icons.Outlined.EvStation, viewModel.onlineVehicles.toString(), "Online", Color(0xFFE8F5E9), Color(0xFF2E7D32))
             SummaryVerticalDivider()
-            SummaryItem(Modifier.weight(1f), Icons.Outlined.BatteryChargingFull, "78%", "Avg. Battery", Color(0xFFE8F5E9), Color(0xFF2E7D32))
+            SummaryItem(Modifier.weight(1f), Icons.Outlined.BatteryChargingFull, "${viewModel.avgBattery}%", "Avg. Battery", Color(0xFFE8F5E9), Color(0xFF2E7D32))
             SummaryVerticalDivider()
-            SummaryItem(Modifier.weight(1f), Icons.Outlined.LocationOn, "186 km", "Avg. Range", Color(0xFFE8F5E9), Color(0xFF2E7D32))
+            SummaryItem(Modifier.weight(1f), Icons.Outlined.LocationOn, "${viewModel.avgRange} km", "Avg. Range", Color(0xFFE8F5E9), Color(0xFF2E7D32))
         }
     }
 }
@@ -255,6 +246,15 @@ fun VehicleCard(vehicle: VehicleListing) {
                             }
                         }
                         Text(text = vehicle.model, fontSize = 14.sp, color = Color.Gray)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        vehicle.issue?.let {
+                            Text(
+                                text = "Issue: $it",
+                                fontSize = 12.sp,
+                                color = Color.Red,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Surface(
                             shape = RoundedCornerShape(4.dp),
@@ -370,50 +370,13 @@ fun TipsCard() {
     }
 }
 
-val sampleVehicles = listOf(
-    VehicleListing(
-        id = "1",
-        name = "EvSpot EV-01",
-        model = "Tata Nexon EV Max",
-        plate = "MH01AB1234",
-        imageRes = R.drawable.car,
-        batteryPercentage = 72,
-        estRangeKm = 246,
-        connectionStatus = ConnectionStatus.CONNECTED,
-        chargingStatus = "Not Charging",
-        lastChargedInfo = "Today, 07:42 AM",
-        isPrimary = true
-    ),
-    VehicleListing(
-        id = "2",
-        name = "EvSpot Scooter",
-        model = "Ather 450X",
-        plate = "MH01CD5678",
-        imageRes = R.drawable.scooter,
-        batteryPercentage = 68,
-        estRangeKm = 89,
-        connectionStatus = ConnectionStatus.CONNECTED,
-        chargingStatus = "Not Charging",
-        lastChargedInfo = "Yesterday, 09:15 PM"
-    ),
-    VehicleListing(
-        id = "3",
-        name = "Comet EV",
-        model = "MG Comet EV",
-        plate = "MH01EF9012",
-        imageRes = R.drawable.commet,
-        batteryPercentage = 35,
-        estRangeKm = 72,
-        connectionStatus = ConnectionStatus.OFFLINE,
-        chargingStatus = "Not Charging",
-        lastChargedInfo = "2 days ago"
-    )
-)
+
+
 
 @Preview(showBackground = true)
 @Composable
 fun MyVehiclesScreenPreview() {
     EVSpotTheme {
-        MyVehiclesScreen()
+        MyVehiclesScreen(onAddVehicleClick = {})
     }
 }
