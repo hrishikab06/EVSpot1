@@ -12,9 +12,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.evspot.navigation.Screen
 import com.example.evspot.ui.components.EVSpotBottomNavigation
+import com.example.evspot.ui.screens.VehicleViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun MainDashboardScreen(onNavigateToDetail: (String) -> Unit) {
+fun MainDashboardScreen(
+    onNavigateToDetail: (String) -> Unit,
+    vehicleViewModel: VehicleViewModel = viewModel()
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination?.route
@@ -46,7 +51,12 @@ fun MainDashboardScreen(onNavigateToDetail: (String) -> Unit) {
                 HomeScreen(onNavigate = onNavigateToDetail) 
             }
             composable(Screen.Map.route) { MapScreen() }
-            composable(Screen.Vehicle.route) { VehicleScreen() }
+            composable(Screen.Vehicle.route) { 
+                VehicleScreen(
+                    onAddVehicleClick = { onNavigateToDetail(Screen.AddVehicle.route) },
+                    viewModel = vehicleViewModel
+                ) 
+            }
             composable(Screen.Bookings.route) { BookingsScreen() }
         }
     }

@@ -7,11 +7,14 @@ import androidx.navigation.compose.composable
 import com.example.evspot.ui.screens.*
 import com.example.evspot.ui.screens.auth.*
 import com.example.evspot.ui.screens.detail.*
+import com.example.evspot.ui.screens.VehicleViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
+    val vehicleViewModel: VehicleViewModel = viewModel()
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
@@ -61,9 +64,12 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(Screen.Main.route) {
-            MainDashboardScreen(onNavigateToDetail = { route ->
-                navController.navigate(route)
-            })
+            MainDashboardScreen(
+                onNavigateToDetail = { route ->
+                    navController.navigate(route)
+                },
+                vehicleViewModel = vehicleViewModel
+            )
         }
         
         // Detail Screens
@@ -102,6 +108,12 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(Screen.PastTrips.route) {
             PastTripsScreen(onBackClick = { navController.popBackStack() })
+        }
+        composable(Screen.AddVehicle.route) {
+            AddVehicleScreen(
+                onBack = { navController.popBackStack() },
+                viewModel = vehicleViewModel
+            )
         }
     }
 }
