@@ -9,11 +9,39 @@ import com.google.android.libraries.places.api.model.CircularBounds
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.api.net.SearchNearbyRequest
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.android.libraries.places.api.model.AutocompletePrediction
 import kotlinx.coroutines.tasks.await
 
 class PlacesRepository(context: Context) {
     private val placesClient: PlacesClient = Places.createClient(context)
     private val TAG = "PlacesRepository"
+
+    suspend fun getAutocompleteSuggestions(query: String): List<AutocompletePrediction> {
+        val request = FindAutocompletePredictionsRequest.builder()
+            .setQuery(query)
+            .build()
+        return try {
+            val response = placesClient.findAutocompletePredictions(request).await()
+            response.autocompletePredictions
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching suggestions", e)
+            emptyList()
+        }
+    }
+
+    suspend fun getPlaceLatLng(placeId: String): LatLng? {
+        val placeFields = listOf(Place.Field.LOCATION)
+        val request = FetchPlaceRequest.newInstance(placeId, placeFields)
+        return try {
+            val response = placesClient.fetchPlace(request).await()
+            response.place.location
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching place details", e)
+            null
+        }
+    }
 
     suspend fun searchChargingStations(
         center: LatLng,
@@ -55,5 +83,34 @@ class PlacesRepository(context: Context) {
             // Re-throw or return specific error state if needed, but for now log and empty
             emptyList()
         }
+    }
+
+    suspend fun searchAlongRoute(
+        path: List<LatLng>,
+        radiusMeters: Double
+    ): List<ChargingSpot> {
+        if (path.isEmpty()) return emptyList()
+
+        val uniqueSpots = mutableMapOf<String, ChargingSpot>()
+        
+        // Search at start, middle, and end, and some points in between if long enough
+        val searchPoints = mutableListOf<LatLng>()
+        searchPoints.add(path.first())
+        if (path.size > 2) {
+            searchPoints.add(path[path.size / 2])
+        }
+        searchPoints.add(path.last())
+        
+        // If route is long, add more points
+        // For simplicity, just use these 3 for now, or we could calculate distance
+        
+        searchPoints.forEach { point ->
+            val spots = searchChargingStations(point, radiusMeters)
+            spots.forEach { spot ->
+                uniqueSpots[spot.id] = spot
+            }
+        }
+        
+        return uniqueSpots.values.toList()
     }
 }

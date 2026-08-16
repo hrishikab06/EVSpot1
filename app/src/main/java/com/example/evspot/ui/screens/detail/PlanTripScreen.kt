@@ -3,6 +3,7 @@ package com.example.evspot.ui.screens.detail
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -17,12 +18,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.BuildConfig
+import com.example.evspot.data.PlacesRepository
+import com.example.evspot.data.RouteRepository
+import com.example.evspot.model.ChargingSpot
+import com.example.evspot.model.MapConfig
 import com.example.evspot.ui.components.ChargingMap
 import com.example.evspot.ui.theme.EVSpotTheme
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import kotlinx.coroutines.launch
 
 data class TripFilter(
     val label: String,
@@ -53,74 +63,152 @@ data class TrafficLeg(
 fun PlanTripScreen(
     onBackClick: () -> Unit = {}
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                title = {
-                    Text(
-                        text = "Plan a Trip",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                },
-                actions = {
-                    Box {
-                        IconButton(onClick = { /* TODO */ }) {
-                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
-                        }
-                        Surface(
-                            shape = CircleShape,
-                            color = Color.Red,
-                            modifier = Modifier
-                                .size(16.dp)
-                                .align(Alignment.TopEnd)
-                                .padding(top = 8.dp, end = 8.dp)
-                        ) {
-                            Text(
-                                text = "3",
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.wrapContentSize(Alignment.Center)
-                            )
-                        }
-                    }
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Default.AccountCircle, contentDescription = "Profile", modifier = Modifier.size(32.dp))
-                    }
-                }
-            )
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val placesRepository = remember { PlacesRepository(context) }
+    val routeRepository = remember { RouteRepository(BuildConfig.MAPS_API_KEY) }
+
+    var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
+    var destinationName by remember { mutableStateOf("Navi Mumbai Airport, Mumbai") }
+    var destinationLatLng by remember { mutableStateOf<LatLng?>(null) }
+    
+    var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
+    var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
+    
+    var totalDistance by remember { mutableStateOf("42 km") }
+    var totalTime by remember { mutableStateOf("1 h 25 min") }
+    
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var suggestions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length > 2) {
+            suggestions = placesRepository.getAutocompleteSuggestions(searchQuery)
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color(0xFFF8FBF8))
-        ) {
+    }
+
+    val onPlaceSelected: (AutocompletePrediction) -> Unit = { prediction ->
+        destinationName = prediction.getPrimaryText(null).toString()
+        isSearchActive = false
+        scope.launch {
+            val latLng = placesRepository.getPlaceLatLng(prediction.placeId)
+            destinationLatLng = latLng
+            if (latLng != null && deviceLocation != null) {
+                val result = routeRepository.getRoute(deviceLocation!!, latLng)
+                result?.routes?.firstOrNull()?.let { route ->
+                    val path = route.overviewPolyline.decodePath().map { LatLng(it.lat, it.lng) }
+                    routePoints = path
+                    totalDistance = route.legs.firstOrNull()?.distance?.humanReadable ?: ""
+                    totalTime = route.legs.firstOrNull()?.duration?.humanReadable ?: ""
+                    
+                    // Search for charging stations along route
+                    chargingSpots = placesRepository.searchAlongRoute(path, MapConfig.searchRadius.toDouble())
+                }
+            }
+        }
+    }
+
+    if (isSearchActive) {
+        BackHandler { isSearchActive = false }
+        SearchOverlay(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            suggestions = suggestions,
+            onSuggestionClick = onPlaceSelected,
+            onClose = { isSearchActive = false }
+        )
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = "Plan a Trip",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+                    },
+                    actions = {
+                        Box {
+                            IconButton(onClick = { /* TODO */ }) {
+                                Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = Color.Red,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 8.dp, end = 8.dp)
+                            ) {
+                                Text(
+                                    text = "3",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.wrapContentSize(Alignment.Center)
+                                )
+                            }
+                        }
+                        IconButton(onClick = { /* TODO */ }) {
+                            Icon(Icons.Default.AccountCircle, contentDescription = "Profile", modifier = Modifier.size(32.dp))
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                BottomActionButtons()
+            }
+        ) { innerPadding ->
             LazyColumn(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(Color(0xFFF8FBF8)),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    LocationInputCard()
+                    LocationInputCard(
+                        destinationName = destinationName,
+                        onDestinationClick = { isSearchActive = true }
+                    )
                 }
                 item {
                     TripFilterChips(sampleFilters)
                 }
                 item {
-                    MapPlaceholder()
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        ChargingMap(
+                            modifier = Modifier.fillMaxSize(),
+                            destinationLocation = destinationLatLng,
+                            routePoints = routePoints,
+                            chargingSpots = chargingSpots,
+                            onDeviceLocationChanged = { loc ->
+                                if (deviceLocation == null) {
+                                    deviceLocation = loc
+                                }
+                            }
+                        )
+                    }
                 }
                 item {
-                    TripOverviewCard()
+                    TripOverviewCard(
+                        distance = totalDistance,
+                        duration = totalTime
+                    )
                 }
                 item {
                     Text(
@@ -135,17 +223,69 @@ fun PlanTripScreen(
                 item {
                     EstimatedCostCard()
                 }
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
             }
-            BottomActionButtons()
         }
     }
 }
 
 @Composable
-fun LocationInputCard() {
+fun SearchOverlay(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    suggestions: List<AutocompletePrediction>,
+    onSuggestionClick: (AutocompletePrediction) -> Unit,
+    onClose: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color.White
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Search Destination") },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF2E7D32)
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            LazyColumn {
+                items(suggestions.size) { index ->
+                    val suggestion = suggestions[index]
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSuggestionClick(suggestion) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Place, contentDescription = null, tint = Color.Gray)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(text = suggestion.getPrimaryText(null).toString(), fontWeight = FontWeight.Bold)
+                            Text(text = suggestion.getSecondaryText(null).toString(), fontSize = 12.sp, color = Color.Gray)
+                        }
+                    }
+                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LocationInputCard(
+    destinationName: String,
+    onDestinationClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -166,10 +306,15 @@ fun LocationInputCard() {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(color = Color(0xFFF5F5F5))
                 Spacer(modifier = Modifier.height(12.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDestinationClick() },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(Icons.Default.Place, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Navi Mumbai Airport, Mumbai", fontSize = 15.sp, color = Color.Black)
+                    Text(text = destinationName, fontSize = 15.sp, color = Color.Black)
                 }
             }
             IconButton(onClick = { /* TODO */ }) {
@@ -219,23 +364,10 @@ fun TripFilterChips(filters: List<TripFilter>) {
 }
 
 @Composable
-fun MapPlaceholder() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(250.dp)
-            .background(Color(0xFFE0E0E0), RoundedCornerShape(16.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        ChargingMap(
-            modifier = Modifier.fillMaxSize(),
-            isLiteMode = true
-        )
-    }
-}
-
-@Composable
-fun TripOverviewCard() {
+fun TripOverviewCard(
+    distance: String = "42 km",
+    duration: String = "1 h 25 min"
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -258,9 +390,9 @@ fun TripOverviewCard() {
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                OverviewItem(Modifier.weight(1f), "Total Distance", "42 km")
+                OverviewItem(Modifier.weight(1f), "Total Distance", distance)
                 OverviewVerticalDivider()
-                OverviewItem(Modifier.weight(1f), "Total Time (with stop)", "1 h 25 min")
+                OverviewItem(Modifier.weight(1f), "Total Time (with stop)", duration)
                 OverviewVerticalDivider()
                 OverviewItem(Modifier.weight(1f), "Est. Energy Needed", "18.2 kWh")
             }

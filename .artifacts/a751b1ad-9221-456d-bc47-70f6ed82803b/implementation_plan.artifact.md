@@ -1,36 +1,48 @@
-# Implementation Plan - Nearby Stations Layout Fix
+# Implementation Plan - Plan a Trip UI Restoration & Functionality
 
-This plan addresses the layout compression and squeezing issues in the `Nearby Stations` screen while preserving the existing UI design.
-
-## User Review Required
-
-> [!IMPORTANT]
-> This fix only modifies the layout constraints (weights and widths) of the existing `StationCard` to ensure it uses the screen width correctly and prevents text squeezing. No visual design changes are being made.
+This plan restores the original UI layout of the **Plan a Trip** screen (as per REFERENCE 1) while adding real-world map and trip planning functionality, including destination search, route calculation, and charging stations along the route.
 
 ## Proposed Changes
 
-### UI Components
+### Core UI Structure
 
-#### [MODIFY] [NearbyChargersScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/NearbyChargersScreen.kt)
+#### [MODIFY] [PlanTripScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/PlanTripScreen.kt)
+*   **Sticky Bottom Bar**: Restructure the root layout to use a standard `Scaffold` with `bottomBar = { BottomActionButtons() }`. This ensures the buttons remain fixed and don't scroll with the content.
+*   **Main Content**: Use a `Column` for the scrollable content above the fixed bottom bar.
+*   **Interactive Input**:
+    *   Update `LocationInputCard` to use `TextField` or clickable areas for "Current Location" and "Destination".
+    *   Implement a full-screen or overlay UI for Places Autocomplete suggestions when typing in the destination field.
+*   **State Management**:
+    *   `origin`: LatLng (defaults to device location).
+    *   `destination`: LatLng? (selected via Autocomplete).
+    *   `routePoints`: List<LatLng> (calculated polyline).
+    *   `nearbyChargingStations`: List<ChargingSpot> (found along the route).
+*   **Map Integration**: Update `ChargingMap` calls to pass the `routePolyline` and `destination` marker.
 
-*   **`StationCard` Refactoring (Layout Constraints only):**
-    *   In the top `Row` of the card, add `Modifier.weight(1f)` to the left `Column` (containing the station name, location, and distance). This ensures the left column takes up all available space and correctly wraps text, while pushing the right column (availability, price, rating) to the end without being squeezed.
-    *   Add a small end padding to the left `Column` to prevent text from touching the right-side components.
-    *   In the bottom `Row` of the card, add `Modifier.weight(1f)` to the inner `Row` (containing power, connectors, and hours). This prevents the "View Details" button from being pushed off-screen or squeezed by long metadata text.
-    *   Ensure all `Text` components use idiomatic wrapping behavior by removing any unintended width constraints.
+### Data & Repositories
 
-*   **`NearbyStationsSheetContent` Verification:**
-    *   Confirm the `LazyColumn` and `StationCard` correctly fill the maximum width provided by the `BottomSheetScaffold`.
+#### [MODIFY] [PlacesRepository.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/data/PlacesRepository.kt)
+*   Add `fetchAutocompleteSuggestions(query: String)`: Fetches suggestions as the user types.
+*   Add `fetchPlaceDetails(placeId: String)`: Retrieves coordinates for the selected suggestion.
+*   Add `searchAlongRoute(path: List<LatLng>)`: A strategy to find charging stations along the route path (e.g., searching at 20km intervals or using a bounding box).
+
+#### [NEW] `RouteRepository.kt`
+*   Implement `fetchRoute(origin: LatLng, destination: LatLng)`: Calls Google Directions API to get route geometry and metadata (distance, duration).
+
+### Map Components
+
+#### [MODIFY] [MapScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/MapScreen.kt)
+*   Add support for rendering a `Polyline` when `routePoints` are provided.
+*   Show a destination marker when a location is selected.
 
 ## Verification Plan
 
 ### Automated Tests
 *   Run `gradlew :app:assembleDebug` to verify the build.
 
-### Manual Verification
-*   Open the "Find Nearby" screen.
-*   Verify that charging station cards occupy the full width of the screen (minus standard margins).
-*   Verify that long station names and addresses wrap correctly over multiple lines instead of squeezing into a narrow column.
-*   Verify that the price, rating, and availability information on the right side of the card are correctly aligned to the end and not overlapping with the station name.
-*   Verify that the "View Details" button is clearly visible and correctly positioned at the bottom-right of the card.
-*   Confirm that the map and Places API functionality are still active and working.
+### Manual Verification (against REFERENCE 1)
+1.  **Layout**: Confirm the "Save Trip" and "Start Navigation" buttons are fixed at the bottom.
+2.  **Search**: Tap the destination field, type a place, and select a suggestion.
+3.  **Route**: Verify a polyline appears on the map connecting the user to the destination.
+4.  **Stations**: Verify charging station markers appear along the route.
+5.  **Overview**: Confirm the "Total Distance" and "Total Time" update based on the actual route.

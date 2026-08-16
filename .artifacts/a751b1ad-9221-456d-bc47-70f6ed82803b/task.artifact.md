@@ -1,7 +1,8 @@
-- [ ] Update `MapConfig.kt` (radius = 10km)
-- [ ] Initialize Places SDK in `MainActivity.kt`
-- [ ] Create `PlacesRepository.kt` for fetching EV charging stations
-- [ ] Update `MapScreen.kt` (radius circle, green vehicle marker, dynamic markers)
-- [ ] Update `ChargingMap.kt` (expose search center and map click)
-- [ ] Update `NearbyChargersScreen.kt` (state management, real data integration)
-- [ ] Verify build and functionality
+- [ ] Revert `PlanTripScreen.kt` to standard `Scaffold` + `LazyColumn` for original layout
+- [ ] Restore fixed bottom action bar in `PlanTripScreen.kt`
+- [ ] Implement interactive Destination search with Places Autocomplete
+- [ ] Implement `RouteRepository.kt` for fetching driving routes
+- [ ] Update `PlacesRepository.kt` with "along route" search logic
+- [ ] Update `MapScreen.kt` and `ChargingMap.kt` to render route polylines
+- [ ] Wire together the trip planning flow (Search -> Route -> Stations)
+- [ ] Verify build and functionality against original design
