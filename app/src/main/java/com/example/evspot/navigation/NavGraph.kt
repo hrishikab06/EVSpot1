@@ -9,6 +9,7 @@ import com.example.evspot.ui.screens.auth.*
 import com.example.evspot.ui.screens.detail.*
 import com.example.evspot.ui.screens.VehicleViewModel
 import com.example.evspot.ui.UserViewModel
+import com.example.evspot.ui.ThemeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
@@ -17,6 +18,7 @@ import androidx.navigation.NavType
 fun AppNavGraph(navController: NavHostController) {
     val vehicleViewModel: VehicleViewModel = viewModel()
     val userViewModel: UserViewModel = viewModel()
+    val themeViewModel: ThemeViewModel = viewModel()
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
@@ -29,7 +31,10 @@ fun AppNavGraph(navController: NavHostController) {
             })
         }
         composable(Screen.Account.route) {
-            AccountScreen(onBack = { navController.popBackStack() })
+            AccountScreen(
+                onBack = { navController.popBackStack() },
+                themeViewModel = themeViewModel
+            )
         }
         composable(Screen.Notifications.route) {
             NotificationScreen(

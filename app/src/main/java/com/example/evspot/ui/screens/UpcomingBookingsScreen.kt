@@ -51,7 +51,7 @@ fun UpcomingBookingsScreen(
     
     Scaffold(
         topBar = {
-            Column(modifier = Modifier.background(Color.White)) {
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
                 TopAppBar(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -105,7 +105,7 @@ fun UpcomingBookingsScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
                 
                 BookingTabs(
@@ -194,7 +194,8 @@ fun SectionHeader() {
         Text(
             "Your Bookings",
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.onSurface
         )
         Surface(
             color = PaleGreen,
@@ -221,7 +222,7 @@ fun SectionHeader() {
 @Composable
 fun BookingCard(booking: Booking) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -242,7 +243,7 @@ fun BookingCard(booking: Booking) {
                 )
                 Text(
                     "Booking ID: #${booking.id}",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
@@ -414,9 +415,9 @@ fun BookingDetailItem(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Column {
-            Text(label, color = Color.Gray, fontSize = 10.sp)
-            Text(value, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            Text(subValue, color = Color.Gray, fontSize = 11.sp)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(subValue, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
         }
     }
 }
@@ -424,7 +425,7 @@ fun BookingDetailItem(
 @Composable
 fun InfoBanner() {
     Surface(
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -449,12 +450,13 @@ fun InfoBanner() {
                 Text(
                     "Need to make changes?",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     "You can modify or cancel your booking up to 30 minutes before the start time.",
                     fontSize = 11.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 14.sp
                 )
             }

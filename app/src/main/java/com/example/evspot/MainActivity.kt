@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.navigation.compose.rememberNavController
 import com.example.evspot.navigation.AppNavGraph
 import com.example.evspot.ui.UserViewModel
+import com.example.evspot.ui.ThemeViewModel
 import com.example.evspot.ui.screens.VehicleViewModel
 import com.example.evspot.MyVehiclesScreen
 import com.example.evspot.ui.screens.detail.ChargingHistoryScreen
@@ -47,7 +48,8 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            EVSpotTheme {
+            val themeViewModel: ThemeViewModel = viewModel()
+            EVSpotTheme(themeMode = themeViewModel.themeMode.value) {
                 val navController = rememberNavController()
                 AppNavGraph(navController)
             }

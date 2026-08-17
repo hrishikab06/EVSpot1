@@ -1,5 +1,6 @@
 package com.example.evspot.ui.components
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,27 +20,40 @@ fun BatteryAlertCard(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
+    val bgColor = if (isDark) Color(0xFF3E2723).copy(alpha = 0.5f) else Color(0xFFFFF9C4)
+    val iconColor = if (isDark) Color(0xFFFFD54F) else Color(0xFFFBC02D)
+    
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9C4))
+        colors = CardDefaults.cardColors(containerColor = bgColor)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFFBC02D))
+            Icon(Icons.Default.Info, contentDescription = null, tint = iconColor)
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("All good!", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(
+                    "All good!", 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 14.sp,
+                    color = if (isDark) Color.White else Color.Black
+                )
                 Text(
                     "Your battery level is sufficient for your next trip.",
                     fontSize = 12.sp,
-                    color = Color.DarkGray
+                    color = if (isDark) Color.LightGray else Color.DarkGray
                 )
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+            Icon(
+                Icons.Default.ChevronRight, 
+                contentDescription = null, 
+                tint = if (isDark) Color.LightGray else Color.Gray
+            )
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.evspot.ui.components
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -21,11 +22,12 @@ fun QuickAccessCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     Card(
         onClick = onClick,
         modifier = modifier.height(100.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -46,14 +48,15 @@ fun QuickAccessCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(icon, contentDescription = null, tint = Color(0xFF1B5E20), modifier = Modifier.size(24.dp))
+                Icon(icon, contentDescription = null, tint = if (isDark) Color(0xFF81C784) else Color(0xFF1B5E20), modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = title,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
-                    lineHeight = 14.sp
+                    lineHeight = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
