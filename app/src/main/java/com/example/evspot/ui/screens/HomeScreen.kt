@@ -2,6 +2,7 @@ package com.example.evspot.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,17 +10,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.data.PlacesRepository
+import com.example.evspot.model.ChargingSpot
 import com.example.evspot.model.EVInfo
+import com.example.evspot.model.MapConfig
 import com.example.evspot.navigation.Screen
 import com.example.evspot.ui.components.*
+import com.example.evspot.ui.components.search.SuggestionList
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,38 +36,148 @@ fun HomeScreen(
     evList: List<EVInfo> = listOf(EVInfo("EVSpot EV-01", 72, 246)),
     onNavigate: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val placesRepository = remember { PlacesRepository(context) }
     val scaffoldState = rememberBottomSheetScaffoldState()
 
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = 160.dp,
-        sheetContainerColor = MaterialTheme.colorScheme.surface,
-        sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        sheetShadowElevation = 16.dp,
-        sheetDragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = Color.LightGray.copy(alpha = 0.5f)
-            )
-        },
-        sheetContent = {
-            DashboardSheetContent(evList, onNavigate)
-        }
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Full screen map as background
-            ChargingMap(
-                modifier = Modifier.fillMaxSize(),
-                bottomPadding = 160.dp,
-                isLiteMode = true
-            )
+    var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
+    var searchCenter by remember { mutableStateOf<LatLng?>(null) }
+    var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
 
-            // Floating Top UI
-            Column(
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var suggestions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+
+    val activeSearchCenter = searchCenter ?: deviceLocation ?: MapConfig.DEFAULT_LOCATION
+
+    // HIDE TOP BAR WHEN EXPANDED
+    val isSheetExpanded = scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length > 2) {
+            suggestions = placesRepository.getAutocompleteSuggestions(searchQuery)
+        } else {
+            suggestions = emptyList()
+        }
+    }
+
+    LaunchedEffect(activeSearchCenter, searchCenter) {
+        // Only search if we have a selected search center
+        if (searchCenter != null) {
+            isLoading = true
+            chargingSpots = placesRepository.searchChargingStations(
+                activeSearchCenter,
+                5000.0 // Exactly 5 km radius
+            )
+            isLoading = false
+        } else {
+            chargingSpots = emptyList()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        BottomSheetScaffold(
+            scaffoldState = scaffoldState,
+            sheetPeekHeight = 160.dp,
+            sheetContainerColor = MaterialTheme.colorScheme.surface,
+            sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetShadowElevation = 16.dp,
+            sheetDragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = Color.LightGray.copy(alpha = 0.5f)
+                )
+            },
+            sheetContent = {
+                DashboardSheetContent(evList, onNavigate)
+            }
+        ) { innerPadding ->
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                // Full screen map as background
+                ChargingMap(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomPadding = 160.dp,
+                    isLiteMode = false, // ENABLE INTERACTIVITY
+                    searchCenter = searchCenter,
+                    searchRadius = 5000.0,
+                    chargingSpots = chargingSpots,
+                    onDeviceLocationChanged = { loc ->
+                        if (deviceLocation == null) {
+                            deviceLocation = loc
+                        }
+                    },
+                    onMapClick = { loc ->
+                        searchCenter = loc
+                        searchQuery = "Selected Location"
+                    }
+                )
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color(0xFF2E7D32)
+                    )
+                }
+            }
+        }
+
+        // Floating Top UI - ABOVE EVERYTHING ELSE
+        if (!isSheetExpanded) {
+            Surface(
                 modifier = Modifier
-                    .statusBarsPadding()
-                    .padding(horizontal = 16.dp)
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                shadowElevation = 8.dp
             ) {
-                FloatingTopBar(onNavigate = onNavigate)
+                Column(
+                    modifier = Modifier
+                        .statusBarsPadding()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 8.dp)
+                ) {
+                    FloatingTopBar(
+                        onNavigate = onNavigate,
+                        isSearching = searchCenter != null,
+                        onClearSearch = {
+                            searchCenter = null
+                            searchQuery = ""
+                            isSearchActive = false
+                        },
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = {
+                            searchQuery = it
+                            isSearchActive = it.isNotEmpty()
+                        }
+                    )
+
+                    // In-place Search Suggestions - INSIDE THE TOP BAR AREA TO ENSURE LAYER ORDER
+                    if (isSearchActive && suggestions.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                                .heightIn(max = 400.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            SuggestionList(
+                                suggestions = suggestions,
+                                onSuggestionClick = { prediction ->
+                                    searchQuery = prediction.getPrimaryText(null).toString()
+                                    isSearchActive = false
+                                    scope.launch {
+                                        val latLng = placesRepository.getPlaceLatLng(prediction.placeId)
+                                        searchCenter = latLng
+                                    }
+                                },
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -162,7 +281,13 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FloatingTopBar(onNavigate: (String) -> Unit) {
+fun FloatingTopBar(
+    onNavigate: (String) -> Unit,
+    isSearching: Boolean,
+    onClearSearch: () -> Unit,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit
+) {
     // We reuse the components from TopBar but make it floating and transparent
     Row(
         modifier = Modifier
@@ -171,26 +296,66 @@ fun FloatingTopBar(onNavigate: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
             Image(
                 painter = painterResource(id = com.example.evspot.R.drawable.evspot_logo),
                 contentDescription = "EVSpot Logo",
                 modifier = Modifier.size(36.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Ev",
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.Black,
-                fontSize = 26.sp
-            )
-            Text(
-                text = "Spot",
-                fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF1B5E20),
-                fontSize = 26.sp
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            // MODERN SEARCH BAR replacing "EvSpot" text
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp),
+                placeholder = { 
+                    Text(
+                        "Search location...", 
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant 
+                    ) 
+                },
+                leadingIcon = { 
+                    Icon(
+                        Icons.Default.Search, 
+                        contentDescription = null, 
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    ) 
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty() || isSearching) {
+                        IconButton(onClick = onClearSearch) {
+                            Icon(
+                                Icons.Default.Close, 
+                                contentDescription = "Clear search", 
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(28.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                ),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge
             )
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             BadgedBox(

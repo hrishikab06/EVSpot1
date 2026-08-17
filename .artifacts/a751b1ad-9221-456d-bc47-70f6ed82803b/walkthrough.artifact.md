@@ -1,26 +1,24 @@
-# Walkthrough - Plan a Trip Map Layout & UI Restoration
+# Walkthrough - Home Page UI & Interaction Corrections
 
-I have restored the **Plan a Trip** screen to its original UI structure (Reference 1) while successfully implementing the expanded map layout (Reference 2) and real-world route functionality.
+I have polished the Home page UI, improved the search interaction, and refined the map visuals to provide a cleaner and more professional user experience.
 
 ## Changes Made
 
-### 1. `PlanTripScreen.kt`
-*   **Sticky Bottom Bar**: Restored the "Save Trip" and "Start Navigation" buttons to a fixed position at the bottom of the screen using the `Scaffold`'s `bottomBar` parameter.
-*   **Expanded Map Layout**: Refactored the main content area to use a `BottomSheetScaffold`.
-    *   The map now serves as a large background layer, filling the available space.
-    *   The `LocationInputCard` and `TripFilterChips` float elegantly over the top of the map.
-    *   The trip overview and route details are now contained within a draggable bottom sheet with a visible handle.
-*   **Interaction Logic**:
-    *   The destination field is now fully clickable and triggers a Places Autocomplete search.
-    *   Selecting a destination updates the map with a red marker, calculates the real driving route (green polyline), and identifies charging stations along the path.
-    *   The "Total Distance" and "Total Time" in the Trip Overview update dynamically based on the actual route results.
+### 1. Modern Search Bar
+- **Modernized UI**: Refactored the search bar into a pill-shaped design with `RoundedCornerShape(28.dp)`. It now uses a subtle background color and elevation that matches modern map applications.
+- **Improved Padding & Typography**: Added appropriate horizontal padding and switched to `MaterialTheme.typography.bodyLarge` for a cleaner look.
+- **Consistent Icons**: Styled the search and close icons to align with the primary EVSpot color scheme.
 
-### 2. Map Components (`MapScreen.kt` & `ChargingMap.kt`)
-*   Ensured the current location marker uses the EVSpot Green hue.
-*   Implemented rendering for the route polyline and destination marker.
-*   The camera now automatically fits the entire route on the screen when a destination is selected.
+### 2. Context-Aware Visibility
+- **Dynamic Hiding**: Linked the search bar's visibility to the `BottomSheetScaffold` state. When the user drags the bottom panel up to expand the map, the search bar smoothly disappears, allowing the map to fill the entire screen without distraction.
+- **Automatic Return**: The search bar reappears immediately when the panel is collapsed back to its peek height.
+
+### 3. Map Visual Refinement
+- **Removed Duplicate Zooms**: Disabled the default Google Maps UI zoom controls. Now, only the custom EVSpot-branded zoom buttons are visible, maintaining a single, consistent set of controls.
+- **Search-Specific Radius**: Refined the radius circle logic. The light-green 5km range circle now only appears when a search is actually performed. On the initial load (current location only), the circle is hidden to keep the map uncluttered.
 
 ## Verification Results
-*   **Layout Fidelity**: The bottom buttons are fixed, and the map follows the expanded layout shown in Reference 2.
-*   **Functionality**: Search, routing, and charging station detection are all live and functional.
-*   **Build**: `gradlew :app:assembleDebug` completed successfully.
+- **Build**: `gradlew :app:assembleDebug` completed successfully.
+- **Visuals**: Search bar is modern and pill-shaped; only one set of zoom controls is visible.
+- **Behavior**: Search bar hides correctly on map expansion and returns on collapse. Range circle only appears around searched locations.
+- **Functionality**: Current location, search, and charging station markers remain fully functional and distinguishable.
