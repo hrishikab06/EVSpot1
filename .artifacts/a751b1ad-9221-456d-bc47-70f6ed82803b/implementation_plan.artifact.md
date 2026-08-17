@@ -1,48 +1,35 @@
-# Implementation Plan - Plan a Trip UI Restoration & Functionality
+# Plan a Trip UI Restoration & Functionality Fix
 
-This plan restores the original UI layout of the **Plan a Trip** screen (as per REFERENCE 1) while adding real-world map and trip planning functionality, including destination search, route calculation, and charging stations along the route.
+This plan restores the original Plan a Trip UI structure (fixed bottom buttons, scrollable overview) while implementing the expanded map layout and core functionality (route calculation, charging stations along route).
 
 ## Proposed Changes
 
-### Core UI Structure
+### UI Components
 
 #### [MODIFY] [PlanTripScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/PlanTripScreen.kt)
-*   **Sticky Bottom Bar**: Restructure the root layout to use a standard `Scaffold` with `bottomBar = { BottomActionButtons() }`. This ensures the buttons remain fixed and don't scroll with the content.
-*   **Main Content**: Use a `Column` for the scrollable content above the fixed bottom bar.
-*   **Interactive Input**:
-    *   Update `LocationInputCard` to use `TextField` or clickable areas for "Current Location" and "Destination".
-    *   Implement a full-screen or overlay UI for Places Autocomplete suggestions when typing in the destination field.
-*   **State Management**:
-    *   `origin`: LatLng (defaults to device location).
-    *   `destination`: LatLng? (selected via Autocomplete).
-    *   `routePoints`: List<LatLng> (calculated polyline).
-    *   `nearbyChargingStations`: List<ChargingSpot> (found along the route).
-*   **Map Integration**: Update `ChargingMap` calls to pass the `routePolyline` and `destination` marker.
-
-### Data & Repositories
-
-#### [MODIFY] [PlacesRepository.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/data/PlacesRepository.kt)
-*   Add `fetchAutocompleteSuggestions(query: String)`: Fetches suggestions as the user types.
-*   Add `fetchPlaceDetails(placeId: String)`: Retrieves coordinates for the selected suggestion.
-*   Add `searchAlongRoute(path: List<LatLng>)`: A strategy to find charging stations along the route path (e.g., searching at 20km intervals or using a bounding box).
-
-#### [NEW] `RouteRepository.kt`
-*   Implement `fetchRoute(origin: LatLng, destination: LatLng)`: Calls Google Directions API to get route geometry and metadata (distance, duration).
-
-### Map Components
+*   **Root Structure**: Wrap the entire screen in a `Scaffold` with `bottomBar = { BottomActionButtons() }` to keep buttons fixed.
+*   **Content Area**: Use `BottomSheetScaffold` as the main content.
+    *   **Background Content**: A `Box` containing the full-screen `ChargingMap` with `LocationInputCard` and `TripFilterChips` floating at the top.
+    *   **Sheet Content**: `TripOverviewCard`, `RoutePlanCard`, etc., in a draggable sheet.
+*   **Interactions**: Ensure the destination field is clickable and opens the `SearchOverlay`.
+*   **Logic**: Connect `onPlaceSelected` to `RouteRepository` and `PlacesRepository.searchAlongRoute`.
 
 #### [MODIFY] [MapScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/MapScreen.kt)
-*   Add support for rendering a `Polyline` when `routePoints` are provided.
-*   Show a destination marker when a location is selected.
+*   Verify the current location marker is green (`HUE_GREEN`).
+*   Ensure the route polyline and destination marker are rendered when data is available.
+
+### Data & Logic
+
+#### [MODIFY] [PlacesRepository.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/data/PlacesRepository.kt)
+*   Ensure `searchAlongRoute` is robust and uses the provided path to find relevant stations.
 
 ## Verification Plan
 
 ### Automated Tests
 *   Run `gradlew :app:assembleDebug` to verify the build.
 
-### Manual Verification (against REFERENCE 1)
-1.  **Layout**: Confirm the "Save Trip" and "Start Navigation" buttons are fixed at the bottom.
-2.  **Search**: Tap the destination field, type a place, and select a suggestion.
-3.  **Route**: Verify a polyline appears on the map connecting the user to the destination.
-4.  **Stations**: Verify charging station markers appear along the route.
-5.  **Overview**: Confirm the "Total Distance" and "Total Time" update based on the actual route.
+### Manual Verification
+1.  **Layout**: Confirm buttons are sticky at the bottom.
+2.  **Map**: Verify the map background is large and floating cards are correctly positioned.
+3.  **Search**: Tap destination, select a result, and verify the route (polyline) and charging stations appear.
+4.  **Overview**: Confirm distance and time reflect the real route.

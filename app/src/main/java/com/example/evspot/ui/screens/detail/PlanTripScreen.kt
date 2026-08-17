@@ -67,6 +67,7 @@ fun PlanTripScreen(
     val scope = rememberCoroutineScope()
     val placesRepository = remember { PlacesRepository(context) }
     val routeRepository = remember { RouteRepository(BuildConfig.MAPS_API_KEY) }
+    val scaffoldState = rememberBottomSheetScaffoldState()
 
     var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
     var destinationName by remember { mutableStateOf("Navi Mumbai Airport, Mumbai") }
@@ -159,71 +160,103 @@ fun PlanTripScreen(
                         IconButton(onClick = { /* TODO */ }) {
                             Icon(Icons.Default.AccountCircle, contentDescription = "Profile", modifier = Modifier.size(32.dp))
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.White.copy(alpha = 0.9f)
+                    )
                 )
             },
             bottomBar = {
                 BottomActionButtons()
             }
         ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .background(Color(0xFFF8FBF8)),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item {
-                    LocationInputCard(
-                        destinationName = destinationName,
-                        onDestinationClick = { isSearchActive = true }
+            BottomSheetScaffold(
+                scaffoldState = scaffoldState,
+                sheetPeekHeight = 280.dp,
+                sheetContainerColor = Color.White,
+                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                sheetShadowElevation = 16.dp,
+                sheetDragHandle = {
+                    BottomSheetDefaults.DragHandle(
+                        color = Color.LightGray.copy(alpha = 0.5f)
                     )
-                }
-                item {
-                    TripFilterChips(sampleFilters)
-                }
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(250.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        ChargingMap(
-                            modifier = Modifier.fillMaxSize(),
-                            destinationLocation = destinationLatLng,
-                            routePoints = routePoints,
-                            chargingSpots = chargingSpots,
-                            onDeviceLocationChanged = { loc ->
-                                if (deviceLocation == null) {
-                                    deviceLocation = loc
-                                }
-                            }
-                        )
-                    }
-                }
-                item {
-                    TripOverviewCard(
+                },
+                sheetContent = {
+                    TripDetailsSheetContent(
                         distance = totalDistance,
                         duration = totalTime
                     )
                 }
-                item {
-                    Text(
-                        text = "Route Plan",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+            ) { sheetPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    // Full screen map as background
+                    ChargingMap(
+                        modifier = Modifier.fillMaxSize(),
+                        bottomPadding = 280.dp,
+                        destinationLocation = destinationLatLng,
+                        routePoints = routePoints,
+                        chargingSpots = chargingSpots,
+                        onDeviceLocationChanged = { loc ->
+                            if (deviceLocation == null) {
+                                deviceLocation = loc
+                            }
+                        }
                     )
-                }
-                item {
-                    RoutePlanCard(sampleRouteStops, sampleTrafficLegs)
-                }
-                item {
-                    EstimatedCostCard()
+
+                    // Floating Top UI
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        LocationInputCard(
+                            destinationName = destinationName,
+                            onDestinationClick = { isSearchActive = true }
+                        )
+                        TripFilterChips(sampleFilters)
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun TripDetailsSheetContent(
+    distance: String,
+    duration: String
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            TripOverviewCard(
+                distance = distance,
+                duration = duration
+            )
+        }
+        item {
+            Text(
+                text = "Route Plan",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+        }
+        item {
+            RoutePlanCard(sampleRouteStops, sampleTrafficLegs)
+        }
+        item {
+            EstimatedCostCard()
+        }
+        item {
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

@@ -1,8 +1,5 @@
-- [ ] Revert `PlanTripScreen.kt` to standard `Scaffold` + `LazyColumn` for original layout
-- [ ] Restore fixed bottom action bar in `PlanTripScreen.kt`
-- [ ] Implement interactive Destination search with Places Autocomplete
-- [ ] Implement `RouteRepository.kt` for fetching driving routes
-- [ ] Update `PlacesRepository.kt` with "along route" search logic
-- [ ] Update `MapScreen.kt` and `ChargingMap.kt` to render route polylines
-- [ ] Wire together the trip planning flow (Search -> Route -> Stations)
-- [ ] Verify build and functionality against original design
+- [ ] Restructure `PlanTripScreen.kt` for fixed bottom bar and `BottomSheetScaffold`
+- [ ] Connect destination selection to route and station logic
+- [ ] Verify map markers and polyline visibility
+- [ ] Final UI review against reference screenshots
+- [ ] Build and verify
