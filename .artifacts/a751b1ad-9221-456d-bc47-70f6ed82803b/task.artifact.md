@@ -1,0 +1,5 @@
+- [ ] Restructure `PlanTripScreen.kt` for fixed bottom bar and `BottomSheetScaffold`
+- [ ] Connect destination selection to route and station logic
+- [ ] Verify map markers and polyline visibility
+- [ ] Final UI review against reference screenshots
+- [ ] Build and verify
