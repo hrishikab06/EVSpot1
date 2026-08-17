@@ -1,4 +1,5 @@
 package com.example.evspot.ui.screens.detail
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,7 +35,7 @@ fun StationDetailScreen(stationName: String, onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(station.name) },
+                title = { Text(station.name, color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -43,7 +44,7 @@ fun StationDetailScreen(stationName: String, onBack: () -> Unit) {
             )
         },
         bottomBar = {
-            Surface(shadowElevation = 8.dp, color = Color.White) {
+            Surface(shadowElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
                 val isSelected = selectedSlotId != null
                 Button(
                     onClick = { 
@@ -56,8 +57,8 @@ fun StationDetailScreen(stationName: String, onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSelected) Color(0xFF2E7D32) else Color(0xFFE0E0E0),
-                        contentColor = if (isSelected) Color.White else Color.Gray
+                        containerColor = if (isSelected) Color(0xFF2E7D32) else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
                     Icon(Icons.Default.EvStation, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -79,37 +80,37 @@ fun StationDetailScreen(stationName: String, onBack: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .background(Color(0xFFEFEFEF), RoundedCornerShape(16.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Map goes here", color = Color.Gray, fontSize = 13.sp)
+                Text("Map goes here", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(station.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                Text(station.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFE8F5E9)) {
-                                    Text(station.type, fontSize = 10.sp, color = Color(0xFF2E7D32), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFE8F5E9).copy(alpha = 0.2f)) {
+                                    Text(station.type, fontSize = 10.sp, color = Color(0xFF81C784), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                 }
                             }
-                            Text(station.location, fontSize = 13.sp, color = Color.Gray)
+                            Text(station.location, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = if (station.isFull) Color(0xFFFCE8E8) else Color(0xFFE8F5E9)
+                            color = if (station.isFull) Color(0xFFFCE8E8).copy(alpha = 0.2f) else Color(0xFFE8F5E9).copy(alpha = 0.2f)
                         ) {
                             Text(
                                 station.availability,
                                 fontSize = 11.sp,
-                                color = if (station.isFull) Color(0xFFD32F2F) else Color(0xFF2E7D32),
+                                color = if (station.isFull) Color(0xFFE57373) else Color(0xFF81C784),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
@@ -118,9 +119,9 @@ fun StationDetailScreen(stationName: String, onBack: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFA000), modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("${station.rating} (${station.reviewCount} reviews)", fontSize = 13.sp)
+                        Text("${station.rating} (${station.reviewCount} reviews)", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.width(16.dp))
-                        Text("₹${station.pricePerKwh}/kWh", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("₹${station.pricePerKwh}/kWh", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -128,10 +129,10 @@ fun StationDetailScreen(stationName: String, onBack: () -> Unit) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Station Details", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Station Details", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(12.dp))
                     DetailRow(Icons.Default.Speed, "Max Speed", "${station.maxSpeedKw} kW")
                     DetailRow(Icons.Default.Cable, "Connectors", station.connectors)
@@ -144,10 +145,10 @@ fun StationDetailScreen(stationName: String, onBack: () -> Unit) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Available Slots", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Available Slots", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(16.dp))
                     station.slots.forEach { slot ->
                         SlotRow(
@@ -164,7 +165,7 @@ fun StationDetailScreen(stationName: String, onBack: () -> Unit) {
                             }
                         )
                         if (station.slots.indexOf(slot) != station.slots.size - 1) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color(0xFFF5F5F5))
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
                         }
                     }
                 }
@@ -178,7 +179,7 @@ fun SlotRow(slot: ChargingSlot, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) Color(0xFFE8F5E9) else Color.Transparent,
+        color = if (isSelected) Color(0xFFE8F5E9).copy(alpha = 0.1f) else Color.Transparent,
         border = if (isSelected) BorderStroke(1.dp, Color(0xFF2E7D32)) else null
     ) {
         Row(
@@ -191,22 +192,22 @@ fun SlotRow(slot: ChargingSlot, isSelected: Boolean, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 Surface(
                     shape = CircleShape,
-                    color = if (slot.isAvailable) Color(0xFFE8F5E9) else Color(0xFFFCE8E8),
+                    color = if (slot.isAvailable) Color(0xFFE8F5E9).copy(alpha = 0.2f) else Color(0xFFFCE8E8).copy(alpha = 0.2f),
                     modifier = Modifier.size(44.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = if (slot.isAvailable) Icons.Default.CheckCircle else Icons.Default.Block,
                             contentDescription = null,
-                            tint = if (slot.isAvailable) Color(0xFF2E7D32) else Color(0xFFD32F2F),
+                            tint = if (slot.isAvailable) Color(0xFF81C784) else Color(0xFFE57373),
                             modifier = Modifier.size(26.dp)
                         )
                     }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
-                    Text("Slot ${slot.id}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(slot.type, fontSize = 13.sp, color = Color.Gray)
+                    Text("Slot ${slot.id}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(slot.type, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     
                     slot.statusText?.let {
                         Row(
@@ -217,13 +218,13 @@ fun SlotRow(slot: ChargingSlot, isSelected: Boolean, onClick: () -> Unit) {
                                 imageVector = Icons.Default.Schedule,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
-                                tint = if (slot.isAvailable) Color(0xFF2E7D32) else Color(0xFFD32F2F)
+                                tint = if (slot.isAvailable) Color(0xFF81C784) else Color(0xFFE57373)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = it,
                                 fontSize = 12.sp,
-                                color = if (slot.isAvailable) Color(0xFF2E7D32) else Color(0xFFD32F2F),
+                                color = if (slot.isAvailable) Color(0xFF81C784) else Color(0xFFE57373),
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -232,11 +233,11 @@ fun SlotRow(slot: ChargingSlot, isSelected: Boolean, onClick: () -> Unit) {
             }
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = if (slot.isAvailable) Color(0xFFE8F5E9) else Color(0xFFFCE8E8)
+                color = if (slot.isAvailable) Color(0xFFE8F5E9).copy(alpha = 0.2f) else Color(0xFFFCE8E8).copy(alpha = 0.2f)
             ) {
                 Text(
                     text = if (slot.isAvailable) "Available" else "Busy",
-                    color = if (slot.isAvailable) Color(0xFF2E7D32) else Color(0xFFD32F2F),
+                    color = if (slot.isAvailable) Color(0xFF81C784) else Color(0xFFE57373),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -254,10 +255,10 @@ fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Stri
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = null, tint = Color(0xFF81C784), modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text(label, fontSize = 13.sp, color = Color.Gray)
+            Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
     }
 }

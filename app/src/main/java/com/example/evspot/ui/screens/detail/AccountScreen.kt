@@ -1,12 +1,13 @@
 package com.example.evspot.ui.screens.detail
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,10 +15,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.ui.ThemeMode
+import com.example.evspot.ui.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccountScreen(onBack: () -> Unit) {
+fun AccountScreen(
+    onBack: () -> Unit,
+    themeViewModel: ThemeViewModel
+) {
+    var showThemeDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -42,19 +50,21 @@ fun AccountScreen(onBack: () -> Unit) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column {
+                    AccountRow(Icons.Default.AccountBalanceWallet, "Wallet", "Manage your balance and payments")
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AccountRow(Icons.Default.SwitchAccount, "Switch Account", "Switch between your accounts")
-                    HorizontalDivider()
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AccountRow(Icons.Default.PersonAdd, "Add Account", "Add a new account")
-                    HorizontalDivider()
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AccountRow(Icons.Default.Edit, "Edit Profile", "Update your personal information")
-                    HorizontalDivider()
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AccountRow(Icons.Default.HelpOutline, "Help Centre", "Get help and support")
-                    HorizontalDivider()
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AccountRow(Icons.Default.Shield, "Security & Privacy", "Manage your security and privacy")
-                    HorizontalDivider()
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AccountRow(Icons.Default.Settings, "Settings", "Manage app preferences")
                 }
             }
@@ -62,16 +72,73 @@ fun AccountScreen(onBack: () -> Unit) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                AccountRow(
-                    icon = Icons.Default.Logout,
-                    title = "Account Logout",
-                    subtitle = "Logout from your account",
-                    isDestructive = true
-                )
+                Column {
+                    AccountRow(
+                        icon = Icons.Default.Palette,
+                        title = "App Theme",
+                        subtitle = "Light, Dark or System Default",
+                        onClick = { showThemeDialog = true }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    AccountRow(
+                        icon = Icons.Default.Logout,
+                        title = "Account Logout",
+                        subtitle = "Logout from your account",
+                        isDestructive = true
+                    )
+                }
             }
         }
+    }
+
+    if (showThemeDialog) {
+        ThemeSelectionDialog(
+            currentMode = themeViewModel.themeMode.value,
+            onDismiss = { showThemeDialog = false },
+            onSelect = { mode ->
+                themeViewModel.setThemeMode(mode)
+                showThemeDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun ThemeSelectionDialog(
+    currentMode: ThemeMode,
+    onDismiss: () -> Unit,
+    onSelect: (ThemeMode) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select App Theme") },
+        text = {
+            Column {
+                ThemeOptionRow("Light", currentMode == ThemeMode.LIGHT) { onSelect(ThemeMode.LIGHT) }
+                ThemeOptionRow("Dark", currentMode == ThemeMode.DARK) { onSelect(ThemeMode.DARK) }
+                ThemeOptionRow("System Default", currentMode == ThemeMode.DEFAULT) { onSelect(ThemeMode.DEFAULT) }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun ThemeOptionRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(label)
     }
 }
 
@@ -80,7 +147,7 @@ fun ProfileCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -116,9 +183,18 @@ fun ProfileCard() {
 }
 
 @Composable
-fun AccountRow(icon: ImageVector, title: String, subtitle: String, isDestructive: Boolean = false) {
+fun AccountRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    isDestructive: Boolean = false,
+    onClick: () -> Unit = {}
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
@@ -135,9 +211,18 @@ fun AccountRow(icon: ImageVector, title: String, subtitle: String, isDestructive
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDestructive) Color(0xFFD32F2F) else Color.Black)
+            Text(
+                title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = if (isDestructive) Color(0xFFD32F2F) else MaterialTheme.colorScheme.onSurface
+            )
             Text(subtitle, fontSize = 12.sp, color = Color.Gray)
         }
-        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = if (isDestructive) Color(0xFFD32F2F) else Color.Gray)
+        Icon(
+            Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = if (isDestructive) Color(0xFFD32F2F) else Color.Gray
+        )
     }
 }

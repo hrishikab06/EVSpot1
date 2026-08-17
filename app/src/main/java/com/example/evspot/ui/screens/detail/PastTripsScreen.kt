@@ -55,7 +55,7 @@ fun PastTripsScreen(
                         Text(
                             text = "Review your journey history",
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
@@ -64,16 +64,16 @@ fun PastTripsScreen(
                         onClick = { /* TODO: Filter logic */ },
                         shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Icon(
                             Icons.Outlined.FilterList,
                             contentDescription = "Filter",
                             modifier = Modifier.size(16.dp),
-                            tint = Color.Black
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Filter", color = Color.Black, fontSize = 13.sp)
+                        Text("Filter", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
@@ -84,7 +84,7 @@ fun PastTripsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color(0xFFF8FBF8))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -117,9 +117,9 @@ fun TripStatsCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
@@ -156,7 +156,7 @@ fun StatItem(icon: ImageVector, value: String, label: String) {
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(text = value, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-        Text(text = label, fontSize = 11.sp, color = Color.Gray)
+        Text(text = label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(text = "This Month", fontSize = 9.sp, color = Color(0xFF2E7D32))
     }
 }
@@ -167,7 +167,7 @@ fun StatDivider() {
         modifier = Modifier
             .height(40.dp)
             .width(1.dp)
-            .background(Color(0xFFEEEEEE))
+            .background(MaterialTheme.colorScheme.outlineVariant)
     )
 }
 
@@ -176,9 +176,9 @@ fun PastTripCard(trip: PastTripItem) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
@@ -186,7 +186,6 @@ fun PastTripCard(trip: PastTripItem) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Timeline Route
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Surface(
                     shape = CircleShape,
@@ -197,7 +196,7 @@ fun PastTripCard(trip: PastTripItem) {
                     modifier = Modifier
                         .width(2.dp)
                         .height(32.dp)
-                        .background(Color(0xFFE0E0E0))
+                        .background(MaterialTheme.colorScheme.outlineVariant)
                 )
                 Surface(
                     shape = CircleShape,
@@ -208,20 +207,18 @@ fun PastTripCard(trip: PastTripItem) {
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Start & End details
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = trip.startLocation, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(text = trip.startDate, fontSize = 11.sp, color = Color.Gray)
+                Text(text = trip.startDate, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(text = trip.destination, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(text = trip.endDate, fontSize = 11.sp, color = Color.Gray)
+                Text(text = trip.endDate, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Chip badges (Distance & Duration)
             Column(horizontalAlignment = Alignment.End) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
@@ -251,7 +248,7 @@ fun PastTripCard(trip: PastTripItem) {
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF5F5F5)
+                    color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -260,14 +257,14 @@ fun PastTripCard(trip: PastTripItem) {
                         Icon(
                             Icons.Outlined.Schedule,
                             contentDescription = null,
-                            tint = Color.Gray,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = trip.duration,
                             fontSize = 11.sp,
-                            color = Color.DarkGray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -276,7 +273,6 @@ fun PastTripCard(trip: PastTripItem) {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Map thumbnail preview placeholder
             Box(
                 modifier = Modifier
                     .size(60.dp)
@@ -297,7 +293,7 @@ fun PastTripCard(trip: PastTripItem) {
             Icon(
                 Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color.Gray
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

@@ -100,14 +100,14 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nearby Charging Stations") },
+                title = { Text("Nearby Charging Stations", color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -154,14 +154,14 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Column {
-                    Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
                     val radiusKm = MapConfig.searchRadius / 1000
-                    Text("Within $radiusKm km radius", fontSize = 13.sp, color = Color.Gray)
+                    Text("Within $radiusKm km radius", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 if (chargerStations.isEmpty() && !isLoading) {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("No charging stations found in this area.", color = Color.Gray)
+                        Text("No charging stations found in this area.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     chargerStations.forEach { station ->
@@ -188,9 +188,9 @@ fun NearbyStationsSheetContent(
     ) {
         item {
             Column {
-                Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                 val radiusKm = MapConfig.searchRadius / 1000
-                Text("Within $radiusKm km radius", fontSize = 12.sp, color = Color.Gray)
+                Text("Within $radiusKm km radius", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
@@ -198,7 +198,7 @@ fun NearbyStationsSheetContent(
         if (stations.isEmpty() && !isLoading) {
             item {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    Text("No charging stations found in this area.", color = Color.Gray)
+                    Text("No charging stations found in this area.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
@@ -218,7 +218,7 @@ fun StationCard(station: ChargerStation, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -231,46 +231,48 @@ fun StationCard(station: ChargerStation, onClick: () -> Unit) {
                             station.name,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            modifier = Modifier.weight(1f, fill = false)
+                            modifier = Modifier.weight(1f, fill = false),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFE8F5E9)) {
+                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFE8F5E9).copy(alpha = 0.2f)) {
                             Text(
                                 station.type,
                                 fontSize = 10.sp,
-                                color = Color(0xFF2E7D32),
+                                color = Color(0xFF81C784),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
-                    Text(station.location, fontSize = 12.sp, color = Color.Gray)
+                    Text(station.location, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         "${station.distanceKm} km • ${station.etaMin} min",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Surface(
                         shape = RoundedCornerShape(4.dp),
-                        color = if (station.isFull) Color(0xFFFCE8E8) else Color(0xFFE8F5E9)
+                        color = if (station.isFull) Color(0xFFFCE8E8).copy(alpha = 0.2f) else Color(0xFFE8F5E9).copy(alpha = 0.2f)
                     ) {
                         Text(
                             station.availability,
                             fontSize = 11.sp,
-                            color = if (station.isFull) Color(0xFFD32F2F) else Color(0xFF2E7D32),
+                            color = if (station.isFull) Color(0xFFE57373) else Color(0xFF81C784),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                     Text(
                         "₹${station.pricePerKwh}/kWh",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "★ ${station.rating} (${station.reviewCount})",
                         fontSize = 11.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -284,28 +286,29 @@ fun StationCard(station: ChargerStation, onClick: () -> Unit) {
                     Text(
                         "${station.maxSpeedKw} kW  ",
                         fontSize = 12.sp,
-                        modifier = Modifier.alignByBaseline()
+                        modifier = Modifier.alignByBaseline(),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "${station.connectors}  ",
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.alignByBaseline()
                     )
                     Text(
                         station.hours,
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.alignByBaseline()
                     )
                 }
                 Button(
                     onClick = onClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE8F5E9).copy(alpha = 0.2f)),
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                 ) {
-                    Text("View Details", color = Color(0xFF2E7D32), fontSize = 12.sp)
+                    Text("View Details", color = Color(0xFF81C784), fontSize = 12.sp)
                 }
             }
         }

@@ -17,14 +17,16 @@ fun SearchBar(modifier: Modifier = Modifier) {
         value = text,
         onValueChange = { text = it },
         modifier = modifier.fillMaxWidth(),
-        placeholder = { Text("Where to?", color = Color.Gray) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+        placeholder = { Text("Where to?", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
         shape = RoundedCornerShape(24.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedContainerColor = Color(0xFFF5F5F5),
-            focusedContainerColor = Color(0xFFF5F5F5),
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             unfocusedBorderColor = Color.Transparent,
-            focusedBorderColor = Color(0xFF1B5E20)
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
         ),
         singleLine = true
     )

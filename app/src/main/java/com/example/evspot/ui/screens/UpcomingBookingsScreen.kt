@@ -30,7 +30,6 @@ import com.example.evspot.ui.theme.EVSpotTheme
 import com.example.evspot.ui.theme.VoltGreen
 import com.example.evspot.ui.theme.PaleGreen
 import com.example.evspot.ui.theme.ErrorRed
-
 import com.example.evspot.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,17 +40,17 @@ fun UpcomingBookingsScreen(
     viewModel: UserViewModel
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    
+
     val displayBookings = when (selectedTab) {
         0 -> viewModel.bookings
         1 -> viewModel.completedBookings
         2 -> viewModel.cancelledBookings
         else -> viewModel.bookings
     }
-    
+
     Scaffold(
         topBar = {
-            Column(modifier = Modifier.background(Color.White)) {
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
                 TopAppBar(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -93,7 +92,7 @@ fun UpcomingBookingsScreen(
                             Spacer(modifier = Modifier.width(4.dp))
                             Surface(
                                 shape = CircleShape,
-                                color = Color.LightGray,
+                                color = MaterialTheme.colorScheme.surfaceVariant,
                                 modifier = Modifier.size(36.dp)
                             ) {
                                 Icon(
@@ -105,9 +104,9 @@ fun UpcomingBookingsScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
-                
+
                 BookingTabs(
                     selectedTabIndex = selectedTab,
                     onTabSelected = { selectedTab = it },
@@ -115,7 +114,7 @@ fun UpcomingBookingsScreen(
                 )
             }
         },
-        containerColor = Color(0xFFF8F8F8)
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -128,11 +127,11 @@ fun UpcomingBookingsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 SectionHeader()
             }
-            
+
             if (displayBookings.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-                        Text("No bookings found", color = Color.Gray)
+                        Text("No bookings found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -140,7 +139,7 @@ fun UpcomingBookingsScreen(
                     BookingCard(booking)
                 }
             }
-            
+
             item {
                 InfoBanner()
                 Spacer(modifier = Modifier.height(24.dp))
@@ -177,7 +176,7 @@ fun TabItem(text: String, selected: Boolean, onClick: () -> Unit) {
         Text(
             text = text,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = if (selected) Color.White else Color.Gray,
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             fontSize = 14.sp
         )
@@ -194,7 +193,8 @@ fun SectionHeader() {
         Text(
             "Your Bookings",
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.onSurface
         )
         Surface(
             color = PaleGreen,
@@ -221,7 +221,7 @@ fun SectionHeader() {
 @Composable
 fun BookingCard(booking: Booking) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -242,13 +242,13 @@ fun BookingCard(booking: Booking) {
                 )
                 Text(
                     "Booking ID: #${booking.id}",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(verticalAlignment = Alignment.Top) {
                 Box {
                     Surface(
@@ -279,49 +279,51 @@ fun BookingCard(booking: Booking) {
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.width(16.dp))
-                
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         booking.stationName,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.Place,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
-                            tint = Color.Gray
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             booking.location,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                     }
                 }
-                
+
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         booking.price,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "Est. Cost",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 BookingDetailItem(
                     Modifier.weight(1f),
@@ -345,9 +347,9 @@ fun BookingCard(booking: Booking) {
                     booking.connectorPower
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Surface(
                 color = PaleGreen,
                 shape = RoundedCornerShape(12.dp),
@@ -414,9 +416,9 @@ fun BookingDetailItem(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Column {
-            Text(label, color = Color.Gray, fontSize = 10.sp)
-            Text(value, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            Text(subValue, color = Color.Gray, fontSize = 11.sp)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(subValue, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
         }
     }
 }
@@ -424,7 +426,7 @@ fun BookingDetailItem(
 @Composable
 fun InfoBanner() {
     Surface(
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -433,7 +435,7 @@ fun InfoBanner() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                color = BackgroundGray,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = CircleShape,
                 modifier = Modifier.size(40.dp)
             ) {
@@ -441,7 +443,7 @@ fun InfoBanner() {
                     Icons.Default.Security,
                     contentDescription = null,
                     modifier = Modifier.padding(10.dp),
-                    tint = Color.Gray
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -449,26 +451,24 @@ fun InfoBanner() {
                 Text(
                     "Need to make changes?",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     "You can modify or cancel your booking up to 30 minutes before the start time.",
                     fontSize = 11.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 14.sp
                 )
             }
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = Color.Gray
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
-
-
-private val BackgroundGray = Color(0xFFF8F8F8)
 
 @Preview(showBackground = true)
 @Composable

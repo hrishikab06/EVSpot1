@@ -32,7 +32,7 @@ fun HomeScreen(
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 160.dp,
-        sheetContainerColor = Color.White,
+        sheetContainerColor = MaterialTheme.colorScheme.surface,
         sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         sheetShadowElevation = 16.dp,
         sheetDragHandle = {
@@ -126,7 +126,7 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
             "Quick Access",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             QuickAccessCard(

@@ -1,6 +1,5 @@
 package com.example.evspot.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -11,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.example.evspot.ui.ThemeMode
 
 private val DarkColorScheme = darkColorScheme(
     primary = VoltGreen,
@@ -38,7 +38,12 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun EVSpotTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.DEFAULT,
+    darkTheme: Boolean = when (themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.DEFAULT -> isSystemInDarkTheme()
+    },
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit

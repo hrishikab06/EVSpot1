@@ -2,6 +2,7 @@ package com.example.evspot.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,7 +29,7 @@ fun VehicleCard(ev: EVInfo, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -38,8 +39,8 @@ fun VehicleCard(ev: EVInfo, modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("YOUR EV", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-                    Text(ev.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text("YOUR EV", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(ev.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
                 ConnectionBadge(ev.isConnected)
             }
@@ -51,7 +52,7 @@ fun VehicleCard(ev: EVInfo, modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .size(100.dp, 70.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF5F5F5)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -71,7 +72,7 @@ fun VehicleCard(ev: EVInfo, modifier: Modifier = Modifier) {
                         label = "Battery",
                         iconColor = if (ev.batteryPercentage > 20) Color(0xFF4CAF50) else Color.Red
                     )
-                    Text("${ev.rangeKm} km Est. Range", fontSize = 12.sp, color = Color.DarkGray)
+                    Text("${ev.rangeKm} km Est. Range", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                     StatusItem(
                         icon = Icons.Default.Thermostat,
                         value = "${ev.temperature}°C",
@@ -86,8 +87,9 @@ fun VehicleCard(ev: EVInfo, modifier: Modifier = Modifier) {
 
 @Composable
 private fun ConnectionBadge(isConnected: Boolean) {
+    val isDark = isSystemInDarkTheme()
     Surface(
-        color = if (isConnected) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
+        color = if (isConnected) Color(0xFFE8F5E9).copy(alpha = if (isDark) 0.2f else 1.0f) else Color(0xFFFFEBEE).copy(alpha = if (isDark) 0.2f else 1.0f),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -105,7 +107,7 @@ private fun ConnectionBadge(isConnected: Boolean) {
                 if (isConnected) "Connected" else "Disconnected",
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isConnected) Color(0xFF1B5E20) else Color(0xFFB71C1C)
+                color = if (isConnected) (if (isDark) Color(0xFF81C784) else Color(0xFF1B5E20)) else (if (isDark) Color(0xFFE57373) else Color(0xFFB71C1C))
             )
         }
     }
@@ -116,8 +118,8 @@ private fun StatusItem(icon: androidx.compose.ui.graphics.vector.ImageVector, va
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(4.dp))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
         Spacer(modifier = Modifier.width(4.dp))
-        Text(label, fontSize = 10.sp, color = Color.Gray)
+        Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
