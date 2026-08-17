@@ -31,6 +31,8 @@ fun MapScreen(
     chargingSpots: List<ChargingSpot> = emptyList(),
     liteModeEnabled: Boolean = false,
     vehicleLocation: LatLng? = null,
+    destinationLocation: LatLng? = null,
+    routePoints: List<LatLng> = emptyList(),
     searchCenter: LatLng? = null,
     searchRadius: Double = MapConfig.searchRadius.toDouble(),
     onMapClick: ((LatLng) -> Unit)? = null,
@@ -145,6 +147,15 @@ fun MapScreen(
             strokeWidth = 2f
         )
 
+        // Route Polyline
+        if (routePoints.isNotEmpty()) {
+            Polyline(
+                points = routePoints,
+                color = Color(0xFF2E7D32),
+                width = 5f
+            )
+        }
+
         // Vehicle Marker - Uses provided location or device location, falls back to default
         val vehiclePos = vehicleLocation ?: deviceLocation ?: MapConfig.DEFAULT_LOCATION
         Marker(
@@ -153,6 +164,15 @@ fun MapScreen(
             snippet = "EVSpot EV-01",
             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
         )
+
+        // Destination Marker
+        destinationLocation?.let {
+            Marker(
+                state = MarkerState(position = it),
+                title = "Destination",
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+            )
+        }
 
         chargingSpots.forEach { spot ->
             Marker(

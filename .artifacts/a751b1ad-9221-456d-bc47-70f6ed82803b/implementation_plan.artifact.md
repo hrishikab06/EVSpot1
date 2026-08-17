@@ -1,26 +1,27 @@
-# Implementation Plan - Nearby Stations Layout Fix
+# Plan a Trip UI Restoration & Functionality Fix
 
-This plan addresses the layout compression and squeezing issues in the `Nearby Stations` screen while preserving the existing UI design.
-
-## User Review Required
-
-> [!IMPORTANT]
-> This fix only modifies the layout constraints (weights and widths) of the existing `StationCard` to ensure it uses the screen width correctly and prevents text squeezing. No visual design changes are being made.
+This plan restores the original Plan a Trip UI structure (fixed bottom buttons, scrollable overview) while implementing the expanded map layout and core functionality (route calculation, charging stations along route).
 
 ## Proposed Changes
 
 ### UI Components
 
-#### [MODIFY] [NearbyChargersScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/NearbyChargersScreen.kt)
+#### [MODIFY] [PlanTripScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/PlanTripScreen.kt)
+*   **Root Structure**: Wrap the entire screen in a `Scaffold` with `bottomBar = { BottomActionButtons() }` to keep buttons fixed.
+*   **Content Area**: Use `BottomSheetScaffold` as the main content.
+    *   **Background Content**: A `Box` containing the full-screen `ChargingMap` with `LocationInputCard` and `TripFilterChips` floating at the top.
+    *   **Sheet Content**: `TripOverviewCard`, `RoutePlanCard`, etc., in a draggable sheet.
+*   **Interactions**: Ensure the destination field is clickable and opens the `SearchOverlay`.
+*   **Logic**: Connect `onPlaceSelected` to `RouteRepository` and `PlacesRepository.searchAlongRoute`.
 
-*   **`StationCard` Refactoring (Layout Constraints only):**
-    *   In the top `Row` of the card, add `Modifier.weight(1f)` to the left `Column` (containing the station name, location, and distance). This ensures the left column takes up all available space and correctly wraps text, while pushing the right column (availability, price, rating) to the end without being squeezed.
-    *   Add a small end padding to the left `Column` to prevent text from touching the right-side components.
-    *   In the bottom `Row` of the card, add `Modifier.weight(1f)` to the inner `Row` (containing power, connectors, and hours). This prevents the "View Details" button from being pushed off-screen or squeezed by long metadata text.
-    *   Ensure all `Text` components use idiomatic wrapping behavior by removing any unintended width constraints.
+#### [MODIFY] [MapScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/MapScreen.kt)
+*   Verify the current location marker is green (`HUE_GREEN`).
+*   Ensure the route polyline and destination marker are rendered when data is available.
 
-*   **`NearbyStationsSheetContent` Verification:**
-    *   Confirm the `LazyColumn` and `StationCard` correctly fill the maximum width provided by the `BottomSheetScaffold`.
+### Data & Logic
+
+#### [MODIFY] [PlacesRepository.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/data/PlacesRepository.kt)
+*   Ensure `searchAlongRoute` is robust and uses the provided path to find relevant stations.
 
 ## Verification Plan
 
@@ -28,9 +29,7 @@ This plan addresses the layout compression and squeezing issues in the `Nearby S
 *   Run `gradlew :app:assembleDebug` to verify the build.
 
 ### Manual Verification
-*   Open the "Find Nearby" screen.
-*   Verify that charging station cards occupy the full width of the screen (minus standard margins).
-*   Verify that long station names and addresses wrap correctly over multiple lines instead of squeezing into a narrow column.
-*   Verify that the price, rating, and availability information on the right side of the card are correctly aligned to the end and not overlapping with the station name.
-*   Verify that the "View Details" button is clearly visible and correctly positioned at the bottom-right of the card.
-*   Confirm that the map and Places API functionality are still active and working.
+1.  **Layout**: Confirm buttons are sticky at the bottom.
+2.  **Map**: Verify the map background is large and floating cards are correctly positioned.
+3.  **Search**: Tap destination, select a result, and verify the route (polyline) and charging stations appear.
+4.  **Overview**: Confirm distance and time reflect the real route.

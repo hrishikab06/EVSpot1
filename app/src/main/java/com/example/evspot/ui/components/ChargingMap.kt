@@ -37,6 +37,8 @@ fun ChargingMap(
     useMock: Boolean = false,
     isLiteMode: Boolean = false,
     vehicleLocation: LatLng? = null,
+    destinationLocation: LatLng? = null,
+    routePoints: List<LatLng> = emptyList(),
     searchCenter: LatLng? = null,
     searchRadius: Double = MapConfig.searchRadius.toDouble(),
     chargingSpots: List<ChargingSpot> = emptyList(),
@@ -50,11 +52,18 @@ fun ChargingMap(
         position = CameraPosition.fromLatLngZoom(MapConfig.DEFAULT_LOCATION, MapConfig.defaultZoom)
     }
 
-    // Move camera when search center changes
-    LaunchedEffect(searchCenter) {
-        searchCenter?.let {
+    // Move camera when search center or route changes
+    LaunchedEffect(searchCenter, routePoints) {
+        if (searchCenter != null) {
             cameraPositionState.animate(
-                CameraUpdateFactory.newLatLngZoom(it, MapConfig.defaultZoom)
+                CameraUpdateFactory.newLatLngZoom(searchCenter, MapConfig.defaultZoom)
+            )
+        } else if (routePoints.isNotEmpty()) {
+            // Fit route
+            val builder = com.google.android.gms.maps.model.LatLngBounds.Builder()
+            routePoints.forEach { builder.include(it) }
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngBounds(builder.build(), 100)
             )
         }
     }
@@ -70,6 +79,8 @@ fun ChargingMap(
                 liteModeEnabled = isLiteMode,
                 cameraPositionState = cameraPositionState,
                 vehicleLocation = vehicleLocation,
+                destinationLocation = destinationLocation,
+                routePoints = routePoints,
                 searchCenter = searchCenter,
                 searchRadius = searchRadius,
                 chargingSpots = chargingSpots,

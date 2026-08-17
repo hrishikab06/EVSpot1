@@ -1,7 +1,5 @@
-- [ ] Update `MapConfig.kt` (radius = 10km)
-- [ ] Initialize Places SDK in `MainActivity.kt`
-- [ ] Create `PlacesRepository.kt` for fetching EV charging stations
-- [ ] Update `MapScreen.kt` (radius circle, green vehicle marker, dynamic markers)
-- [ ] Update `ChargingMap.kt` (expose search center and map click)
-- [ ] Update `NearbyChargersScreen.kt` (state management, real data integration)
-- [ ] Verify build and functionality
+- [ ] Restructure `PlanTripScreen.kt` for fixed bottom bar and `BottomSheetScaffold`
+- [ ] Connect destination selection to route and station logic
+- [ ] Verify map markers and polyline visibility
+- [ ] Final UI review against reference screenshots
+- [ ] Build and verify

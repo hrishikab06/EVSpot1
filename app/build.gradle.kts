@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.play.services.maps)
     implementation(libs.play.services.location)
     implementation(libs.google.places)
+    implementation(libs.google.maps.services)
     implementation(libs.kotlinx.coroutines.play.services)
     
     // Networking
