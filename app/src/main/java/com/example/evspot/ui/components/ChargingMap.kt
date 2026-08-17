@@ -3,8 +3,11 @@ package com.example.evspot.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +76,43 @@ fun ChargingMap(
                 onMapClick = onMapClick,
                 onDeviceLocationChanged = onDeviceLocationChanged
             )
+        }
+
+        // Zoom Controls
+        Column(
+            modifier = Modifier
+                .padding(bottom = 80.dp + bottomPadding, end = 16.dp)
+                .align(Alignment.BottomEnd),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FloatingActionButton(
+                onClick = {
+                    coroutineScope.launch {
+                        cameraPositionState.animate(CameraUpdateFactory.zoomIn())
+                    }
+                },
+                modifier = Modifier.size(40.dp),
+                containerColor = Color.White,
+                contentColor = Color.Black,
+                shape = RoundedCornerShape(8.dp),
+                elevation = FloatingActionButtonDefaults.elevation(2.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Zoom In")
+            }
+            FloatingActionButton(
+                onClick = {
+                    coroutineScope.launch {
+                        cameraPositionState.animate(CameraUpdateFactory.zoomOut())
+                    }
+                },
+                modifier = Modifier.size(40.dp),
+                containerColor = Color.White,
+                contentColor = Color.Black,
+                shape = RoundedCornerShape(8.dp),
+                elevation = FloatingActionButtonDefaults.elevation(2.dp)
+            ) {
+                Icon(Icons.Default.Remove, contentDescription = "Zoom Out")
+            }
         }
         
         FloatingActionButton(

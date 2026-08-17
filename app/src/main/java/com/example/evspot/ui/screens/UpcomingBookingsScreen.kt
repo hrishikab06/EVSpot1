@@ -12,7 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,32 +23,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.model.Booking
+import com.example.evspot.ui.UserViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evspot.ui.theme.EVSpotTheme
 import com.example.evspot.ui.theme.VoltGreen
 import com.example.evspot.ui.theme.PaleGreen
 import com.example.evspot.ui.theme.ErrorRed
 
-data class Booking(
-    val id: String,
-    val stationName: String,
-    val location: String,
-    val connectorType: String,
-    val connectorPower: String,
-    val date: String,
-    val weekday: String,
-    val timeRange: String,
-    val durationText: String,
-    val price: String,
-    val status: String,
-    val isDC: Boolean = true
-)
+import com.example.evspot.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpcomingBookingsScreen(
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onNavigate: (String) -> Unit = {},
+    viewModel: UserViewModel
 ) {
-    val bookings: List<Booking> = sampleBookings
+    var selectedTab by remember { mutableIntStateOf(0) }
+    
+    val displayBookings = when (selectedTab) {
+        0 -> viewModel.bookings
+        1 -> viewModel.completedBookings
+        2 -> viewModel.cancelledBookings
+        else -> viewModel.bookings
+    }
     
     Scaffold(
         topBar = {
@@ -71,7 +70,7 @@ fun UpcomingBookingsScreen(
                     actions = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box {
-                                IconButton(onClick = { /* TODO */ }) {
+                                IconButton(onClick = { onNavigate(Screen.Notifications.route) }) {
                                     Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
                                 }
                                 Surface(
@@ -109,7 +108,11 @@ fun UpcomingBookingsScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
                 )
                 
-                BookingTabs()
+                BookingTabs(
+                    selectedTabIndex = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    upcomingCount = viewModel.bookings.size
+                )
             }
         },
         containerColor = Color(0xFFF8F8F8)
@@ -126,8 +129,16 @@ fun UpcomingBookingsScreen(
                 SectionHeader()
             }
             
-            items(bookings) { booking ->
-                BookingCard(booking)
+            if (displayBookings.isEmpty()) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
+                        Text("No bookings found", color = Color.Gray)
+                    }
+                }
+            } else {
+                items(displayBookings) { booking ->
+                    BookingCard(booking)
+                }
             }
             
             item {
@@ -139,25 +150,29 @@ fun UpcomingBookingsScreen(
 }
 
 @Composable
-fun BookingTabs() {
+fun BookingTabs(
+    selectedTabIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    upcomingCount: Int
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        TabItem("Upcoming (3)", selected = true)
-        TabItem("Completed", selected = false)
-        TabItem("Cancelled", selected = false)
+        TabItem("Upcoming ($upcomingCount)", selected = selectedTabIndex == 0, onClick = { onTabSelected(0) })
+        TabItem("Completed", selected = selectedTabIndex == 1, onClick = { onTabSelected(1) })
+        TabItem("Cancelled", selected = selectedTabIndex == 2, onClick = { onTabSelected(2) })
     }
 }
 
 @Composable
-fun TabItem(text: String, selected: Boolean) {
+fun TabItem(text: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         color = if (selected) Color(0xFF1B5E20) else Color.Transparent,
         shape = RoundedCornerShape(20.dp),
-        onClick = { /* TODO */ }
+        onClick = onClick
     ) {
         Text(
             text = text,
@@ -452,50 +467,6 @@ fun InfoBanner() {
     }
 }
 
-val sampleBookings = listOf(
-    Booking(
-        id = "BKG12345",
-        stationName = "GreenCharge Station",
-        location = "Bandra Kurla Complex, Mumbai",
-        connectorType = "CCS2",
-        connectorPower = "50 kW",
-        date = "24 May 2025",
-        weekday = "Saturday",
-        timeRange = "10:00 AM - 11:00 AM",
-        durationText = "1 hour",
-        price = "₹120.00",
-        status = "Upcoming",
-        isDC = true
-    ),
-    Booking(
-        id = "BKG12346",
-        stationName = "VoltPoint Hub",
-        location = "Powai, Mumbai",
-        connectorType = "Type 2",
-        connectorPower = "22 kW",
-        date = "25 May 2025",
-        weekday = "Sunday",
-        timeRange = "02:30 PM - 04:00 PM",
-        durationText = "1.5 hours",
-        price = "₹60.00",
-        status = "Upcoming",
-        isDC = false
-    ),
-    Booking(
-        id = "BKG12347",
-        stationName = "ChargeZone DC Fast",
-        location = "Navi Mumbai, Maharashtra",
-        connectorType = "CCS2",
-        connectorPower = "60 kW",
-        date = "27 May 2025",
-        weekday = "Tuesday",
-        timeRange = "09:00 AM - 10:00 AM",
-        durationText = "1 hour",
-        price = "₹180.00",
-        status = "Upcoming",
-        isDC = true
-    )
-)
 
 private val BackgroundGray = Color(0xFFF8F8F8)
 
@@ -503,6 +474,6 @@ private val BackgroundGray = Color(0xFFF8F8F8)
 @Composable
 fun UpcomingBookingsScreenPreview() {
     EVSpotTheme {
-        UpcomingBookingsScreen()
+        UpcomingBookingsScreen(viewModel = viewModel())
     }
 }

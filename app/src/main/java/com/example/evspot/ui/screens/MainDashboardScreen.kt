@@ -54,10 +54,13 @@ fun MainDashboardScreen(
             composable(Screen.Vehicle.route) { 
                 VehicleScreen(
                     onAddVehicleClick = { onNavigateToDetail(Screen.AddVehicle.route) },
+                    onNavigate = onNavigateToDetail,
                     viewModel = vehicleViewModel
                 ) 
             }
-            composable(Screen.Bookings.route) { BookingsScreen() }
+            composable(Screen.Bookings.route) { 
+                BookingsScreen(onNavigate = onNavigateToDetail) 
+            }
         }
     }
 }
