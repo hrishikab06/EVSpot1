@@ -55,6 +55,11 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.google.places)
     implementation(libs.kotlinx.coroutines.play.services)
+    
+    // Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

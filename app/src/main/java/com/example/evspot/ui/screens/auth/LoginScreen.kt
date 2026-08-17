@@ -1,5 +1,6 @@
 package com.example.evspot.ui.screens.auth
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,9 +10,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.data.api.LoginRequest
+import com.example.evspot.data.api.RetrofitClient
 import com.example.evspot.ui.components.auth.*
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 @Composable
 fun LoginScreen(
@@ -21,6 +27,10 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -90,10 +100,56 @@ fun LoginScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                EVSpotPrimaryButton(
-                    text = "Login",
-                    onClick = onLoginSuccess
-                )
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    )
+                }
+
+                if (isLoading) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                } else {
+                    EVSpotPrimaryButton(
+                        text = "Login",
+                        onClick = {
+                            errorMessage = null
+                            if (email.isBlank() || password.isBlank()) {
+                                errorMessage = "Email and password are required"
+                                return@EVSpotPrimaryButton
+                            }
+                            
+                            isLoading = true
+                            scope.launch {
+                                try {
+                                    val response = RetrofitClient.instance.login(
+                                        LoginRequest(email = email, password = password)
+                                    )
+                                    
+                                    if (response.isSuccessful) {
+                                        onLoginSuccess()
+                                    } else {
+                                        val errorBody = response.errorBody()?.string()
+                                        val message = try {
+                                            JSONObject(errorBody ?: "").getString("detail")
+                                        } catch (e: Exception) {
+                                            "Login failed"
+                                        }
+                                        errorMessage = message
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("LoginScreen", "Login error", e)
+                                    errorMessage = "Connection error: ${e.localizedMessage ?: "Check your internet"}"
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    )
+                }
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
