@@ -1,5 +1,4 @@
-- [ ] Restructure `PlanTripScreen.kt` for fixed bottom bar and `BottomSheetScaffold`
-- [ ] Connect destination selection to route and station logic
-- [ ] Verify map markers and polyline visibility
-- [ ] Final UI review against reference screenshots
-- [ ] Build and verify
+- [ ] Disable default zoom controls and refine radius circle logic in `MapScreen.kt`
+- [ ] Implement search bar visibility logic in `HomeScreen.kt`
+- [ ] Polishing search bar UI for a modern look in `HomeScreen.kt`
+- [ ] Verify build and all UI corrections

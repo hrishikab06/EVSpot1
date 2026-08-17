@@ -29,6 +29,7 @@ import com.example.evspot.data.RouteRepository
 import com.example.evspot.model.ChargingSpot
 import com.example.evspot.model.MapConfig
 import com.example.evspot.ui.components.ChargingMap
+import com.example.evspot.ui.components.search.SearchOverlay
 import com.example.evspot.ui.theme.EVSpotTheme
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompletePrediction
@@ -257,59 +258,6 @@ fun TripDetailsSheetContent(
         }
         item {
             Spacer(modifier = Modifier.height(32.dp))
-        }
-    }
-}
-
-@Composable
-fun SearchOverlay(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    suggestions: List<AutocompletePrediction>,
-    onSuggestionClick: (AutocompletePrediction) -> Unit,
-    onClose: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color.White
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                }
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Search Destination") },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF2E7D32)
-                    )
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            LazyColumn {
-                items(suggestions.size) { index ->
-                    val suggestion = suggestions[index]
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSuggestionClick(suggestion) }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Place, contentDescription = null, tint = Color.Gray)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(text = suggestion.getPrimaryText(null).toString(), fontWeight = FontWeight.Bold)
-                            Text(text = suggestion.getSecondaryText(null).toString(), fontSize = 12.sp, color = Color.Gray)
-                        }
-                    }
-                    HorizontalDivider(color = Color(0xFFF5F5F5))
-                }
-            }
         }
     }
 }
