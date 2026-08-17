@@ -22,11 +22,11 @@ fun EVSpotBottomNavigation(
         NavigationItem("Vehicle", Icons.Outlined.DirectionsCar, Screen.Vehicle.route),
         NavigationItem("Bookings", Icons.Outlined.CalendarMonth, Screen.Bookings.route)
     )
-
     NavigationBar(
-        containerColor = Color.White,
-        contentColor = Color(0xFF1B5E20)
-    ) {
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    )
+     {
         items.forEach { item ->
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.label) },
@@ -37,8 +37,8 @@ fun EVSpotBottomNavigation(
                     selectedIconColor = Color(0xFF1B5E20),
                     selectedTextColor = Color(0xFF1B5E20),
                     indicatorColor = Color(0xFFE8F5E9),
-                    unselectedIconColor = Color.Gray,
-                    unselectedTextColor = Color.Gray
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }

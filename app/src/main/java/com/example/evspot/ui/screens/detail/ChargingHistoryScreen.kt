@@ -42,7 +42,7 @@ fun ChargingHistoryScreen(onBack: () -> Unit, viewModel: UserViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF8FBF8)),
+                .background(MaterialTheme.colorScheme.background),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -51,7 +51,8 @@ fun ChargingHistoryScreen(onBack: () -> Unit, viewModel: UserViewModel) {
                 Text(
                     text = "Recent Charging Sessions",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             items(sessions) { session ->
@@ -69,7 +70,7 @@ fun SummaryCard() {
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Summary", fontWeight = FontWeight.Bold)
+            Text("Summary", fontWeight = FontWeight.Bold, color = Color(0xFF1B5E20))
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 SummaryStat(Icons.Default.Bolt, "8", "Total Sessions")
@@ -90,8 +91,8 @@ fun SummaryStat(icon: ImageVector, value: String, label: String) {
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-        Text(label, fontSize = 10.sp, color = Color.Gray)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1B5E20))
+        Text(label, fontSize = 10.sp, color = Color(0xFF1B5E20).copy(alpha = 0.7f))
     }
 }
 
@@ -101,17 +102,17 @@ fun SessionCard(session: ChargingSession) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text(session.stationName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(session.location, fontSize = 12.sp, color = Color.Gray)
-                    Text(session.dateTime, fontSize = 12.sp, color = Color.Gray)
+                    Text(session.stationName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(session.location, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(session.dateTime, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("₹${session.price}", fontWeight = FontWeight.Bold)
+                    Text("₹${session.price}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Surface(
                         shape = RoundedCornerShape(4.dp),
                         color = if (isCancelled) Color(0xFFFCE8E8) else Color(0xFFE8F5E9)
@@ -128,9 +129,9 @@ fun SessionCard(session: ChargingSession) {
             if (!isCancelled) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("${session.batteryFrom}% → ${session.batteryTo}%", fontSize = 12.sp)
-                    Text("${session.energyKwh} kWh", fontSize = 12.sp)
-                    Text("${session.durationMinutes} min", fontSize = 12.sp)
+                    Text("${session.batteryFrom}% → ${session.batteryTo}%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("${session.energyKwh} kWh", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("${session.durationMinutes} min", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
             } else {
                 Spacer(modifier = Modifier.height(8.dp))

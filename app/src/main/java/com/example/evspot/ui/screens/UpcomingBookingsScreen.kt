@@ -30,7 +30,6 @@ import com.example.evspot.ui.theme.EVSpotTheme
 import com.example.evspot.ui.theme.VoltGreen
 import com.example.evspot.ui.theme.PaleGreen
 import com.example.evspot.ui.theme.ErrorRed
-
 import com.example.evspot.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,14 +40,14 @@ fun UpcomingBookingsScreen(
     viewModel: UserViewModel
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    
+
     val displayBookings = when (selectedTab) {
         0 -> viewModel.bookings
         1 -> viewModel.completedBookings
         2 -> viewModel.cancelledBookings
         else -> viewModel.bookings
     }
-    
+
     Scaffold(
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
@@ -93,7 +92,7 @@ fun UpcomingBookingsScreen(
                             Spacer(modifier = Modifier.width(4.dp))
                             Surface(
                                 shape = CircleShape,
-                                color = Color.LightGray,
+                                color = MaterialTheme.colorScheme.surfaceVariant,
                                 modifier = Modifier.size(36.dp)
                             ) {
                                 Icon(
@@ -107,7 +106,7 @@ fun UpcomingBookingsScreen(
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
-                
+
                 BookingTabs(
                     selectedTabIndex = selectedTab,
                     onTabSelected = { selectedTab = it },
@@ -115,7 +114,7 @@ fun UpcomingBookingsScreen(
                 )
             }
         },
-        containerColor = Color(0xFFF8F8F8)
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -128,11 +127,11 @@ fun UpcomingBookingsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 SectionHeader()
             }
-            
+
             if (displayBookings.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-                        Text("No bookings found", color = Color.Gray)
+                        Text("No bookings found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -140,7 +139,7 @@ fun UpcomingBookingsScreen(
                     BookingCard(booking)
                 }
             }
-            
+
             item {
                 InfoBanner()
                 Spacer(modifier = Modifier.height(24.dp))
@@ -177,7 +176,7 @@ fun TabItem(text: String, selected: Boolean, onClick: () -> Unit) {
         Text(
             text = text,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = if (selected) Color.White else Color.Gray,
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             fontSize = 14.sp
         )
@@ -247,9 +246,9 @@ fun BookingCard(booking: Booking) {
                     fontSize = 12.sp
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(verticalAlignment = Alignment.Top) {
                 Box {
                     Surface(
@@ -280,49 +279,51 @@ fun BookingCard(booking: Booking) {
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.width(16.dp))
-                
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         booking.stationName,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.Place,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
-                            tint = Color.Gray
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             booking.location,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                     }
                 }
-                
+
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         booking.price,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "Est. Cost",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 BookingDetailItem(
                     Modifier.weight(1f),
@@ -346,9 +347,9 @@ fun BookingCard(booking: Booking) {
                     booking.connectorPower
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Surface(
                 color = PaleGreen,
                 shape = RoundedCornerShape(12.dp),
@@ -434,7 +435,7 @@ fun InfoBanner() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                color = BackgroundGray,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = CircleShape,
                 modifier = Modifier.size(40.dp)
             ) {
@@ -442,7 +443,7 @@ fun InfoBanner() {
                     Icons.Default.Security,
                     contentDescription = null,
                     modifier = Modifier.padding(10.dp),
-                    tint = Color.Gray
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -463,14 +464,11 @@ fun InfoBanner() {
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = Color.Gray
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
-
-
-private val BackgroundGray = Color(0xFFF8F8F8)
 
 @Preview(showBackground = true)
 @Composable
