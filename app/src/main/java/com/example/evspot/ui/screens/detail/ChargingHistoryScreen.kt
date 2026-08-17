@@ -18,32 +18,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-enum class SessionStatus { COMPLETED, CANCELLED }
-
-data class ChargingSession(
-    val stationName: String,
-    val location: String,
-    val dateTime: String,
-    val price: Int,
-    val status: SessionStatus,
-    val batteryFrom: Int? = null,
-    val batteryTo: Int? = null,
-    val energyKwh: Double? = null,
-    val durationMinutes: Int? = null
-)
-
-val sampleSessions = listOf(
-    ChargingSession("GreenCharge Station", "Bandra Kurla Complex, Mumbai", "28 May 2025, 08:30 PM", 312, SessionStatus.COMPLETED, 20, 82, 18.4, 72),
-    ChargingSession("VoltPoint Charging Hub", "Powai, Mumbai", "25 May 2025, 06:15 PM", 454, SessionStatus.COMPLETED, 35, 90, 22.7, 88),
-    ChargingSession("EcoCharge Station", "Andheri East, Mumbai", "21 May 2025, 10:05 AM", 284, SessionStatus.COMPLETED, 15, 70, 16.2, 65),
-    ChargingSession("CityCharge Point", "Dadra West, Mumbai", "18 May 2025, 07:45 PM", 0, SessionStatus.CANCELLED),
-    ChargingSession("GreenCharge Station", "Bandra Kurla Complex, Mumbai", "15 May 2025, 09:20 PM", 366, SessionStatus.COMPLETED, 22, 78, 19.6, 80)
-)
+import com.example.evspot.model.ChargingSession
+import com.example.evspot.model.SessionStatus
+import com.example.evspot.ui.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChargingHistoryScreen(onBack: () -> Unit) {
+fun ChargingHistoryScreen(onBack: () -> Unit, viewModel: UserViewModel) {
+    val sessions = viewModel.sessions
     Scaffold(
         topBar = {
             TopAppBar(
@@ -72,7 +54,7 @@ fun ChargingHistoryScreen(onBack: () -> Unit) {
                     fontSize = 18.sp
                 )
             }
-            items(sampleSessions) { session ->
+            items(sessions) { session ->
                 SessionCard(session)
             }
         }

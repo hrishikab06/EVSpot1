@@ -182,44 +182,47 @@ fun SlotRow(slot: ChargingSlot, isSelected: Boolean, onClick: () -> Unit) {
         border = if (isSelected) BorderStroke(1.dp, Color(0xFF2E7D32)) else null
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 Surface(
                     shape = CircleShape,
                     color = if (slot.isAvailable) Color(0xFFE8F5E9) else Color(0xFFFCE8E8),
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = if (slot.isAvailable) Icons.Default.CheckCircle else Icons.Default.Block,
                             contentDescription = null,
                             tint = if (slot.isAvailable) Color(0xFF2E7D32) else Color(0xFFD32F2F),
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 }
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(16.dp))
                 Column {
-                    Text("Slot ${slot.id}", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text(slot.type, fontSize = 12.sp, color = Color.Gray)
+                    Text("Slot ${slot.id}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(slot.type, fontSize = 13.sp, color = Color.Gray)
+                    
                     slot.statusText?.let {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(top = 2.dp)
+                            modifier = Modifier.padding(top = 4.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Schedule,
                                 contentDescription = null,
-                                modifier = Modifier.size(12.dp),
+                                modifier = Modifier.size(14.dp),
                                 tint = if (slot.isAvailable) Color(0xFF2E7D32) else Color(0xFFD32F2F)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = it,
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 color = if (slot.isAvailable) Color(0xFF2E7D32) else Color(0xFFD32F2F),
                                 fontWeight = FontWeight.Medium
                             )
@@ -234,8 +237,8 @@ fun SlotRow(slot: ChargingSlot, isSelected: Boolean, onClick: () -> Unit) {
                 Text(
                     text = if (slot.isAvailable) "Available" else "Busy",
                     color = if (slot.isAvailable) Color(0xFF2E7D32) else Color(0xFFD32F2F),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }

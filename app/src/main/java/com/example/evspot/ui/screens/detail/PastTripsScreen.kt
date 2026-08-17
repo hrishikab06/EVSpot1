@@ -22,22 +22,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-data class PastTripItem(
-    val startLocation: String,
-    val startDate: String,
-    val destination: String,
-    val endDate: String,
-    val distance: String,
-    val duration: String
-)
+import com.example.evspot.model.PastTripItem
+import com.example.evspot.ui.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PastTripsScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    viewModel: UserViewModel
 ) {
     BackHandler(onBack = onBackClick)
+    val trips = viewModel.pastTrips
 
     Scaffold(
         topBar = {
@@ -109,7 +104,7 @@ fun PastTripsScreen(
                     )
                 }
 
-                items(samplePastTrips) { trip ->
+                items(trips) { trip ->
                     PastTripCard(trip = trip)
                 }
             }
@@ -307,11 +302,3 @@ fun PastTripCard(trip: PastTripItem) {
         }
     }
 }
-
-val samplePastTrips = listOf(
-    PastTripItem("Goa", "May 12, 2025 • 08:30 AM", "Mumbai", "May 12, 2025 • 03:45 PM", "592 km", "7h 15m"),
-    PastTripItem("Mumbai", "May 10, 2025 • 09:20 AM", "Pune", "May 10, 2025 • 11:50 AM", "148 km", "2h 30m"),
-    PastTripItem("Pune", "May 08, 2025 • 06:40 PM", "Lonavala", "May 08, 2025 • 07:40 PM", "64 km", "1h 00m"),
-    PastTripItem("Mumbai", "May 06, 2025 • 10:00 AM", "Nashik", "May 06, 2025 • 01:30 PM", "167 km", "3h 30m"),
-    PastTripItem("Nashik", "May 04, 2025 • 08:15 AM", "Aurangabad", "May 04, 2025 • 11:45 AM", "182 km", "3h 30m")
-)

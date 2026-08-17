@@ -30,10 +30,13 @@ import com.example.evspot.data.model.VehicleListing
 import com.example.evspot.ui.screens.VehicleViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+import com.example.evspot.navigation.Screen
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyVehiclesScreen(
     onAddVehicleClick: () -> Unit,
+    onNavigate: (String) -> Unit = {},
     viewModel: VehicleViewModel = viewModel()
 ) {
     val vehicles = viewModel.vehicles
@@ -64,7 +67,7 @@ fun MyVehiclesScreen(
                 },
                 actions = {
                     Box {
-                        IconButton(onClick = { /* TODO */ }) {
+                        IconButton(onClick = { onNavigate(Screen.Notifications.route) }) {
                             Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
                         }
                         Surface(
@@ -148,11 +151,12 @@ fun VehiclesHeader(onAddVehicleClick: () -> Unit) {
             onClick = onAddVehicleClick,
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.height(36.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Add Vehicle", fontSize = 14.sp)
+            Text("Add Vehicle", fontSize = 12.sp)
         }
     }
 }

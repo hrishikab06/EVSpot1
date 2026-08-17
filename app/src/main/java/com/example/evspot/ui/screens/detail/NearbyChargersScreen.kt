@@ -6,7 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -47,8 +49,6 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val placesRepository = remember { PlacesRepository(context) }
-
-    val scaffoldState = rememberBottomSheetScaffoldState()
 
     var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
     var searchCenter by remember { mutableStateOf<LatLng?>(null) }
@@ -97,26 +97,7 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
         }
     }
 
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = 320.dp,
-        sheetContainerColor = Color.White,
-        sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        sheetShadowElevation = 16.dp,
-        sheetDragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = Color.LightGray.copy(alpha = 0.5f)
-            )
-        },
-        sheetContent = {
-            NearbyStationsSheetContent(
-                stations = chargerStations,
-                isLoading = isLoading,
-                onStationClick = { station ->
-                    onNavigate(Screen.StationDetail.createRoute(station.name))
-                }
-            )
-        },
+    Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Nearby Charging Stations") },
@@ -126,78 +107,69 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White.copy(alpha = 0.9f)
+                    containerColor = Color.White
                 )
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Map Background
-            ChargingMap(
-                modifier = Modifier.fillMaxSize(),
-                bottomPadding = 320.dp,
-                searchCenter = activeSearchCenter,
-                chargingSpots = chargingSpots,
-                onDeviceLocationChanged = { loc ->
-                    if (deviceLocation == null) {
-                        deviceLocation = loc
-                    }
-                },
-                onMapClick = { loc ->
-                    searchCenter = loc
-                }
-            )
-
-            // Floating Search Bar
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Map at the top
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .height(350.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = if (searchCenter != null) "Selected Location" else "Current Location",
-                        onValueChange = { },
-                        readOnly = true,
-                        placeholder = { Text("Search location or station") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        trailingIcon = {
-                            if (searchCenter != null) {
-                                IconButton(onClick = { searchCenter = null }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear search")
-                                }
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedBorderColor = Color(0xFF2E7D32)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    OutlinedButton(
-                        onClick = { /* TODO: Open Filter */ },
-                        modifier = Modifier.height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
-                    ) {
-                        Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Filter")
+                ChargingMap(
+                    modifier = Modifier.fillMaxSize(),
+                    searchCenter = activeSearchCenter,
+                    chargingSpots = chargingSpots,
+                    onDeviceLocationChanged = { loc ->
+                        if (deviceLocation == null) {
+                            deviceLocation = loc
+                        }
+                    },
+                    onMapClick = { loc ->
+                        searchCenter = loc
                     }
+                )
+                
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color(0xFF2E7D32)
+                    )
                 }
             }
 
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFF2E7D32)
-                )
+            // List content below map
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Column {
+                    Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    val radiusKm = MapConfig.searchRadius / 1000
+                    Text("Within $radiusKm km radius", fontSize = 13.sp, color = Color.Gray)
+                }
+
+                if (chargerStations.isEmpty() && !isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text("No charging stations found in this area.", color = Color.Gray)
+                    }
+                } else {
+                    chargerStations.forEach { station ->
+                        StationCard(station, onClick = { onNavigate(Screen.StationDetail.createRoute(station.name)) })
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

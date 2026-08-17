@@ -59,8 +59,6 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp)
             ) {
                 FloatingTopBar(onNavigate = onNavigate)
-                Spacer(modifier = Modifier.height(12.dp))
-                SearchBar(modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -182,15 +180,15 @@ fun FloatingTopBar(onNavigate: (String) -> Unit) {
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Ev",
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 color = Color.Black,
-                fontSize = 22.sp
+                fontSize = 26.sp
             )
             Text(
                 text = "Spot",
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 color = Color(0xFF1B5E20),
-                fontSize = 22.sp
+                fontSize = 26.sp
             )
         }
 
@@ -206,7 +204,7 @@ fun FloatingTopBar(onNavigate: (String) -> Unit) {
                     }
                 }
             ) {
-                IconButton(onClick = { }) {
+                IconButton(onClick = { onNavigate(Screen.Notifications.route) }) {
                     Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.Black)
                 }
             }

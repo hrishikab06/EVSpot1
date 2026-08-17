@@ -3,8 +3,8 @@ package com.example.evspot.model
 import com.google.android.gms.maps.model.LatLng
 
 object MapConfig {
-    // Fallback location (Bangalore) if user location is unavailable
-    val DEFAULT_LOCATION = LatLng(12.9716, 77.5946)
+    // Fallback location (Mumbai) if user location is unavailable
+    val DEFAULT_LOCATION = LatLng(19.0760, 72.8777)
     
     // Default camera zoom
     val defaultZoom = 14f
