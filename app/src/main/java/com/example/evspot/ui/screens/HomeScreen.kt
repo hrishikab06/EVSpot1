@@ -151,11 +151,20 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
                 modifier = Modifier.weight(1f)
             )
             QuickAccessCard(
+                title = "Wallet",
+                icon = Icons.Default.AccountBalanceWallet,
+                onClick = { onNavigate(Screen.Wallet.route) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            QuickAccessCard(
                 title = "Vehicle Health",
                 icon = Icons.Default.Favorite,
                 onClick = { onNavigate(Screen.Health.route) },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(0.5f)
             )
+            Spacer(modifier = Modifier.weight(0.5f))
         }
     }
 }
