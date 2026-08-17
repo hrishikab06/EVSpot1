@@ -15,6 +15,8 @@ import com.example.evspot.ui.components.EVSpotBottomNavigation
 import com.example.evspot.ui.screens.VehicleViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+import com.example.evspot.ui.screens.detail.WalletScreen
+
 @Composable
 fun MainDashboardScreen(
     onNavigateToDetail: (String) -> Unit,
@@ -50,7 +52,13 @@ fun MainDashboardScreen(
             composable(Screen.Home.route) { 
                 HomeScreen(onNavigate = onNavigateToDetail) 
             }
-            composable(Screen.Map.route) { MapScreen() }
+            composable(Screen.Wallet.route) { 
+                WalletScreen(onBack = { 
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                }) 
+            }
             composable(Screen.Vehicle.route) { 
                 VehicleScreen(
                     onAddVehicleClick = { onNavigateToDetail(Screen.AddVehicle.route) },

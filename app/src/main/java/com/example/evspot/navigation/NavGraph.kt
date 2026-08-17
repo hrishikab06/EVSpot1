@@ -33,6 +33,7 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Screen.Account.route) {
             AccountScreen(
                 onBack = { navController.popBackStack() },
+                onNavigate = { route -> navController.navigate(route) },
                 themeViewModel = themeViewModel
             )
         }
@@ -112,6 +113,9 @@ fun AppNavGraph(navController: NavHostController) {
                 onBack = { navController.popBackStack() },
                 viewModel = userViewModel
             ) 
+        }
+        composable(Screen.Wallet.route) {
+            WalletScreen(onBack = { navController.popBackStack() })
         }
         composable(Screen.UpcomingBookings.route) { 
             UpcomingBookingsScreen(

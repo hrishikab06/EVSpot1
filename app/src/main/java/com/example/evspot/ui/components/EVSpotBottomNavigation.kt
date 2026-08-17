@@ -1,10 +1,10 @@
 package com.example.evspot.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -18,7 +18,7 @@ fun EVSpotBottomNavigation(
 ) {
     val items = listOf(
         NavigationItem("Home", Icons.Outlined.Home, Screen.Home.route),
-        NavigationItem("Map", Icons.Outlined.Map, Screen.Map.route),
+        NavigationItem("Wallet", Icons.Outlined.AccountBalanceWallet, Screen.Wallet.route),
         NavigationItem("Vehicle", Icons.Outlined.DirectionsCar, Screen.Vehicle.route),
         NavigationItem("Bookings", Icons.Outlined.CalendarMonth, Screen.Bookings.route)
     )

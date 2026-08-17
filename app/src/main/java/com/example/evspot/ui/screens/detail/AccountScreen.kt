@@ -1,4 +1,5 @@
 package com.example.evspot.ui.screens.detail
+import com.example.evspot.navigation.Screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,6 +23,7 @@ import com.example.evspot.ui.ThemeViewModel
 @Composable
 fun AccountScreen(
     onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
     themeViewModel: ThemeViewModel
 ) {
     var showThemeDialog by remember { mutableStateOf(false) }
@@ -53,7 +55,12 @@ fun AccountScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column {
-                    AccountRow(Icons.Default.AccountBalanceWallet, "Wallet", "Manage your balance and payments")
+                    AccountRow(
+                        icon = Icons.Default.AccountBalanceWallet,
+                        title = "Wallet",
+                        subtitle = "Manage your balance and payments",
+                        onClick = { onNavigate(Screen.Wallet.route) }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AccountRow(Icons.Default.SwitchAccount, "Switch Account", "Switch between your accounts")
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
