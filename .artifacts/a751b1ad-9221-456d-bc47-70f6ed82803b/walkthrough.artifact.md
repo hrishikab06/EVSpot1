@@ -1,24 +1,35 @@
-# Walkthrough - Home Page UI & Interaction Corrections
+# Walkthrough - Nearby Charging Recommendation Algorithm
 
-I have polished the Home page UI, improved the search interaction, and refined the map visuals to provide a cleaner and more professional user experience.
+I have implemented a deterministic ranking algorithm for the **Nearby Charging Stations** feature, allowing users to re-order results based on various real-world metrics.
 
-## Changes Made
+## Key Implementation Details
 
-### 1. Modern Search Bar
-- **Modernized UI**: Refactored the search bar into a pill-shaped design with `RoundedCornerShape(28.dp)`. It now uses a subtle background color and elevation that matches modern map applications.
-- **Improved Padding & Typography**: Added appropriate horizontal padding and switched to `MaterialTheme.typography.bodyLarge` for a cleaner look.
-- **Consistent Icons**: Styled the search and close icons to align with the primary EVSpot color scheme.
+### 1. Recommendation Algorithm
+Created a weighted scoring system in `NearbyChargersScreen.kt` that calculates an **EVSpot Score** for each station.
+*   **Distance (40%)**: Prioritizes stations closest to the active search center.
+*   **Cost Indicator (25%)**: Uses Google's `priceLevel` to rank affordability.
+*   **User Rating (15%)**: Based on average user stars.
+*   **Reliability (10%)**: Weighted by the total number of user ratings.
+*   **Suitability (10%)**: Provides a baseline for future extension with more EV data.
 
-### 2. Context-Aware Visibility
-- **Dynamic Hiding**: Linked the search bar's visibility to the `BottomSheetScaffold` state. When the user drags the bottom panel up to expand the map, the search bar smoothly disappears, allowing the map to fill the entire screen without distraction.
-- **Automatic Return**: The search bar reappears immediately when the panel is collapsed back to its peek height.
+### 2. User-Selectable Filters
+Added a modern, scrollable row of filter chips at the top of the station list:
+*   ⭐ **Recommended**: The default mode using the weighted EVSpot score.
+*   📍 **Nearest**: Sorts by physical distance.
+*   ₹ **Cheapest**: Sorts by price level (indicates "Price N/A" if unknown).
+*   ⚡ **Fastest**: Prepared for power data (indicates "Power N/A" currently).
+*   ★ **Rating**: Sorts by average user reviews.
 
-### 3. Map Visual Refinement
-- **Removed Duplicate Zooms**: Disabled the default Google Maps UI zoom controls. Now, only the custom EVSpot-branded zoom buttons are visible, maintaining a single, consistent set of controls.
-- **Search-Specific Radius**: Refined the radius circle logic. The light-green 5km range circle now only appears when a search is actually performed. On the initial load (current location only), the circle is hidden to keep the map uncluttered.
+### 3. Visual Map Highlights
+*   The top-ranked station for any selected filter is automatically highlighted on the map with a distinctive **Azure (Blue)** marker.
+*   All other stations remain on the map in their original locations to maintain context.
+*   The highlight moves instantly as you switch between filters.
+
+### 4. Data Reliability
+*   **Real Data**: Stations are fetched from Google Places with real ratings and price levels.
+*   **No Fabricated Values**: If Google does not provide a cost or rating, the algorithm handles it gracefully with a neutral score instead of creating fake data.
 
 ## Verification Results
-- **Build**: `gradlew :app:assembleDebug` completed successfully.
-- **Visuals**: Search bar is modern and pill-shaped; only one set of zoom controls is visible.
-- **Behavior**: Search bar hides correctly on map expansion and returns on collapse. Range circle only appears around searched locations.
-- **Functionality**: Current location, search, and charging station markers remain fully functional and distinguishable.
+*   **Build**: `gradlew :app:assembleDebug` completed successfully.
+*   **Functionality**: Reordering the list updates the map marker highlight in real-time.
+*   **Isolation**: No changes were made to "Plan a Trip" or the Home page, keeping those experiences independent.
