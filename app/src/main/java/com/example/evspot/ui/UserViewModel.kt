@@ -13,15 +13,34 @@ import com.example.evspot.model.sampleSessions
 import com.example.evspot.model.sampleNotifications
 
 import com.example.evspot.model.NotificationItem
+import com.example.evspot.model.sampleNotifications
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 class UserViewModel : ViewModel() {
+    var userId by mutableStateOf<Int?>(null)
+        private set
+
+    var userEmail by mutableStateOf<String?>(null)
+        private set
+
+    var userName by mutableStateOf<String?>(null)
+        private set
+
+    fun setUserSession(id: Int, email: String, name: String) {
+        userId = id
+        userEmail = email
+        userName = name
+    }
+
     private val _notifications = mutableStateListOf<NotificationItem>().apply {
         addAll(sampleNotifications)
     }
     val notifications: List<NotificationItem> = _notifications
 
     private val _bookings = mutableStateListOf<Booking>().apply {
-        addAll(sampleBookings)
+        addAll(com.example.evspot.model.sampleBookings)
     }
     val bookings: List<Booking> = _bookings
 

@@ -1,6 +1,10 @@
 package com.example.evspot.ui.screens.detail
 
+import android.util.Log
+import com.example.evspot.data.StationRepository
+import com.example.evspot.model.*
 import com.example.evspot.navigation.Screen
+import com.example.evspot.ui.components.ChargingMap
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -12,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,13 +27,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.evspot.data.PlacesRepository
-import com.example.evspot.model.ChargingSpot
-import com.example.evspot.model.MapConfig
-import com.example.evspot.model.ChargerStation
-import com.example.evspot.model.ChargingSlot
-import com.example.evspot.model.sampleStations
-import com.example.evspot.ui.components.ChargingMap
+import kotlinx.coroutines.launch
+import kotlin.math.*
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
 import kotlin.math.*
@@ -82,56 +82,87 @@ fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): D
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
+    Log.d("NearbyChargers", "NearbyChargersScreen Composed")
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val placesRepository = remember { PlacesRepository(context) }
+    val stationRepository = remember { StationRepository() }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
     var searchCenter by remember { mutableStateOf<LatLng?>(null) }
-    var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
+    var stations by remember { mutableStateOf<List<com.example.evspot.data.api.Station>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf(NearbyFilter.RECOMMENDED) }
 
     val activeSearchCenter = searchCenter ?: deviceLocation ?: MapConfig.DEFAULT_LOCATION
 
-    LaunchedEffect(activeSearchCenter) {
+    LaunchedEffect(Unit) {
+        Log.d("NearbyChargers", "Screen Launched, fetching stations...")
         isLoading = true
-        chargingSpots = placesRepository.searchChargingStations(
-            activeSearchCenter,
-            MapConfig.searchRadius.toDouble()
-        )
+        stationRepository.getStations().onSuccess { fetchedStations ->
+            Log.d("NearbyChargers", "Successfully fetched ${fetchedStations.size} stations")
+            stations = fetchedStations
+        }.onFailure { error ->
+            Log.e("NearbyChargers", "Failed to fetch stations", error)
+            scope.launch {
+                snackbarHostState.showSnackbar("Error fetching stations: ${error.message}")
+            }
+        }
         isLoading = false
     }
 
-    // Convert ChargingSpot to ChargerStation for the list UI
-    val chargerStations = remember(chargingSpots, deviceLocation, selectedFilter, activeSearchCenter) {
-        val list = chargingSpots.map { spot ->
+    // Filter stations within 10km radius
+    val nearbyStations = remember(stations, activeSearchCenter) {
+        stations.filter { s ->
+            calculateDistance(activeSearchCenter.latitude, activeSearchCenter.longitude, s.latitude, s.longitude) <= 10.0
+        }
+    }
+
+    // Convert API Station to ChargingSpot for the map
+    val chargingSpots = remember(nearbyStations) {
+        Log.d("NearbyChargers", "Mapping ${nearbyStations.size} nearby stations to map spots")
+        nearbyStations.map { s ->
+            ChargingSpot(
+                id = s.id.toString(),
+                name = s.name,
+                position = LatLng(s.latitude, s.longitude),
+                address = s.address,
+                rating = 4.0,
+                userRatingsTotal = 50,
+                priceLevel = 2
+            )
+        }
+    }
+
+    // Convert API Station to ChargerStation for the list UI
+    val chargerStations = remember(nearbyStations, deviceLocation, selectedFilter, activeSearchCenter) {
+        val list = nearbyStations.map { s ->
             val distance = calculateDistance(
                 activeSearchCenter.latitude, activeSearchCenter.longitude,
-                spot.position.latitude, spot.position.longitude
+                s.latitude, s.longitude
             )
             
             val score = calculateEvSpotScore(
                 distanceKm = distance,
-                rating = spot.rating,
-                userRatingsTotal = spot.userRatingsTotal,
-                priceLevel = spot.priceLevel
+                rating = 4.0,
+                userRatingsTotal = 50,
+                priceLevel = 2
             )
-            
+
             ChargerStation(
-                id = spot.id,
-                name = spot.name,
-                type = "EV Charging",
-                location = spot.address,
+                id = s.id.toString(),
+                name = s.name,
+                type = s.access_type ?: "EV Charging",
+                location = s.address,
                 distanceKm = (distance * 10).toInt() / 10.0,
                 etaMin = (distance * 2).toInt(),
-                pricePerKwh = if (spot.priceLevel != null) 15 + spot.priceLevel * 2 else null,
-                rating = spot.rating ?: 0.0,
-                reviewCount = spot.userRatingsTotal ?: 0,
-                maxSpeedKw = null, // Not available from Places API
+                pricePerKwh = 15,
+                rating = 4.0,
+                reviewCount = 50,
+                maxSpeedKw = null, 
                 connectors = "CCS2",
-                hours = "24/7",
-                availability = "Available",
+                hours = s.opening_hours ?: "24/7",
+                availability = "Check Details",
                 evSpotScore = score
             )
         }
@@ -144,24 +175,20 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             NearbyFilter.RATING -> list.sortedByDescending { it.rating }
         }
 
-        // If no nearby real stations, show sample stations as fallback for demo
-        if (sortedList.isEmpty() && !isLoading) {
-            sampleStations
-        } else {
-            sortedList
-        }
+        sortedList
     }
 
     val recommendedSpotId = chargerStations.firstOrNull()?.id
     val recommendedSpot = chargingSpots.find { it.id == recommendedSpotId }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Nearby Charging Stations", color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -247,20 +274,23 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Column {
-                    Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
-                    val radiusKm = MapConfig.searchRadius / 1000
-                    Text("Within $radiusKm km radius", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Nearby Stations (${nearbyStations.size})", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Within 10 km radius", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
-                if (chargerStations.isEmpty() && !isLoading) {
+                if (isLoading) {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("No charging stations found in this area.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        CircularProgressIndicator(color = Color(0xFF2E7D32))
+                    }
+                } else if (chargerStations.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text("No charging stations found. Check your connection.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     chargerStations.forEachIndexed { index, station ->
                         StationCard(
                             station = station, 
-                            onClick = { onNavigate(Screen.StationDetail.createRoute(station.name)) },
+                            onClick = { onNavigate(Screen.StationDetail.createRoute(station.id.toInt())) },
                             isHighlighted = index == 0 // Highlight the top recommendation
                         )
                     }
