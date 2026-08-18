@@ -280,16 +280,12 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
                 onClick = { onNavigate(Screen.PastTrips.route) },
                 modifier = Modifier.weight(1f)
             )
-
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             QuickAccessCard(
                 title = "Vehicle Health",
                 icon = Icons.Default.Favorite,
                 onClick = { onNavigate(Screen.Health.route) },
-                modifier = Modifier.weight(0.5f)
+                modifier = Modifier.weight(1f)
             )
-            Spacer(modifier = Modifier.weight(0.5f))
         }
     }
 }
@@ -461,8 +457,7 @@ fun FloatingTopBar(
 @Composable
 fun DashboardSheetContentPreview() {
     val sampleEvList = listOf(
-        EVInfo("EVSpot EV-01", 72, 246, temperature = 28),
-        EVInfo("Tesla Model 3", 85, 420, temperature = 25)
+        EVInfo("EVSpot EV-01", 72, 246, temperature = 28)
     )
     EVSpotTheme {
         Surface(color = MaterialTheme.colorScheme.surface) {
