@@ -56,6 +56,24 @@ interface ApiService {
 
     @POST("plan-trip")
     suspend fun planTrip(@Body request: PlanTripRequest): Response<PlanTripResponse>
+
+    @retrofit2.http.GET("stations")
+    suspend fun getStations(): Response<StationResponse>
+
+    @retrofit2.http.GET("stations/{stationId}")
+    suspend fun getStationDetails(@retrofit2.http.Path("stationId") stationId: Int): Response<Station>
+
+    @retrofit2.http.GET("stations/{stationId}/chargers")
+    suspend fun getChargers(@retrofit2.http.Path("stationId") stationId: Int): Response<ChargersResponse>
+
+    @POST("chargers/{chargerId}/availability")
+    suspend fun checkAvailability(
+        @retrofit2.http.Path("chargerId") chargerId: Int,
+        @Body request: AvailabilityRequest
+    ): Response<AvailabilityResponse>
+
+    @POST("bookings")
+    suspend fun createBooking(@Body request: BookingRequest): Response<BookingResponse>
 }
 
 data class PlanTripRequest(

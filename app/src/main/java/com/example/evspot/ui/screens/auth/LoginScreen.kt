@@ -25,7 +25,7 @@ import org.json.JSONObject
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (Int, String, String) -> Unit,
     onNavigateToSignUp: () -> Unit,
     onNavigateToForgotPassword: () -> Unit
 ) {
@@ -138,7 +138,16 @@ fun LoginScreen(
                                     )
                                     
                                     if (response.isSuccessful) {
-                                        onLoginSuccess()
+                                        val loginData = response.body()
+                                        if (loginData?.user_id != null) {
+                                            onLoginSuccess(
+                                                loginData.user_id,
+                                                loginData.email ?: "",
+                                                loginData.full_name ?: ""
+                                            )
+                                        } else {
+                                            errorMessage = "Invalid server response"
+                                        }
                                     } else {
                                         val errorBody = response.errorBody()?.string()
                                         val message = try {
