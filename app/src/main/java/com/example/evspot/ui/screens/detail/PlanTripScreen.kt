@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import com.example.evspot.BuildConfig
 import com.example.evspot.data.PlacesRepository
 import com.example.evspot.data.RouteRepository
@@ -38,6 +39,7 @@ import com.example.evspot.ui.components.search.SearchOverlay
 import com.example.evspot.ui.theme.EVSpotTheme
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompletePrediction
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -77,14 +79,14 @@ fun PlanTripScreen(
     val scaffoldState = rememberBottomSheetScaffoldState()
 
     var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
-    var destinationName by remember { mutableStateOf("Navi Mumbai Airport, Mumbai") }
+    var destinationName by remember { mutableStateOf("") }
     var destinationLatLng by remember { mutableStateOf<LatLng?>(null) }
     
     var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
     var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
     
-    var totalDistance by remember { mutableStateOf("42 km") }
-    var totalTime by remember { mutableStateOf("1 h 25 min") }
+    var totalDistance by remember { mutableStateOf("") }
+    var totalTime by remember { mutableStateOf("") }
     
     var planResponse by remember { mutableStateOf<PlanTripResponse?>(null) }
     var isPlanning by remember { mutableStateOf(false) }
@@ -92,6 +94,8 @@ fun PlanTripScreen(
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+    
+    var planningJob by remember { mutableStateOf<Job?>(null) }
 
     LaunchedEffect(searchQuery) {
         if (searchQuery.length > 2) {
@@ -100,9 +104,19 @@ fun PlanTripScreen(
     }
 
     val onPlaceSelected: (AutocompletePrediction) -> Unit = { prediction ->
-        destinationName = prediction.getPrimaryText(null).toString()
+        val selectedName = prediction.getPrimaryText(null).toString()
+        destinationName = selectedName
         isSearchActive = false
-        scope.launch {
+        
+        // RESET ALL STATE IMMEDIATELY
+        planningJob?.cancel()
+        planResponse = null
+        routePoints = emptyList()
+        chargingSpots = emptyList()
+        totalDistance = ""
+        totalTime = ""
+        
+        planningJob = scope.launch {
             val latLng = placesRepository.getPlaceLatLng(prediction.placeId)
             destinationLatLng = latLng
             if (latLng != null && deviceLocation != null) {
@@ -110,15 +124,32 @@ fun PlanTripScreen(
                 result?.routes?.firstOrNull()?.let { route ->
                     val path = route.overviewPolyline.decodePath().map { LatLng(it.lat, it.lng) }
                     routePoints = path
-                    totalDistance = route.legs.firstOrNull()?.distance?.humanReadable ?: ""
-                    totalTime = route.legs.firstOrNull()?.duration?.humanReadable ?: ""
                     
                     // Search for charging stations along route
-                    chargingSpots = placesRepository.searchAlongRoute(path, MapConfig.searchRadius.toDouble())
+                    val freshSpots = placesRepository.searchAlongRoute(path, MapConfig.searchRadius.toDouble())
+                    chargingSpots = freshSpots
                     
                     // Call backend to plan EV trip
                     isPlanning = true
                     try {
+                        val candidateStations = freshSpots.map {
+                            CandidateStation(
+                                id = it.id,
+                                name = it.name,
+                                address = it.address,
+                                latitude = it.position.latitude,
+                                longitude = it.position.longitude
+                            )
+                        }
+
+                        // LOGGING BEFORE CALL
+                        Log.d("PlanTrip", "New Trip Calculation Started")
+                        Log.d("PlanTrip", "Destination: $selectedName (${latLng.latitude}, ${latLng.longitude})")
+                        Log.d("PlanTrip", "Candidate station count: ${candidateStations.size}")
+                        candidateStations.forEach { 
+                            Log.d("PlanTrip", "Candidate: ${it.name} (${it.latitude}, ${it.longitude})")
+                        }
+
                         val request = PlanTripRequest(
                             current_lat = deviceLocation!!.latitude,
                             current_lng = deviceLocation!!.longitude,
@@ -127,27 +158,45 @@ fun PlanTripScreen(
                             current_soc = 18.0,
                             battery_temp = 31.0,
                             battery_capacity_kwh = 40.5,
-                            candidate_stations = chargingSpots.map {
-                                CandidateStation(
-                                    id = it.id,
-                                    name = it.name,
-                                    address = it.address,
-                                    latitude = it.position.latitude,
-                                    longitude = it.position.longitude
-                                )
-                            }
+                            candidate_stations = candidateStations
                         )
                         val response = RetrofitClient.instance.planTrip(request)
                         if (response.isSuccessful) {
-                            planResponse = response.body()
-                            // Update display values if backend provided them
-                            planResponse?.let {
-                                totalDistance = String.format(Locale.getDefault(), "%.1f km", it.total_distance_km)
-                                totalTime = String.format(Locale.getDefault(), "%.0f min", it.total_trip_time_minutes)
+                            val body = response.body()
+                            
+                            // LOGGING RESPONSE
+                            Log.d("PlanTrip", "Response Received: one_stop_possible=${body?.one_stop_possible}")
+                            Log.d("PlanTrip", "Total Distance: ${body?.total_distance_km} km")
+                            Log.d("PlanTrip", "Recommended Station: ${body?.recommended_station?.name}")
+                            body?.route_plan?.forEach { 
+                                Log.d("PlanTrip", "Step: ${it.type} - ${it.name} (${it.distance_km} km)")
+                            }
+
+                            if (body != null) {
+                                // VALIDATION: Recommended station must belong to the CURRENT candidate list
+                                val isRecommendedValid = body.recommended_station == null || 
+                                                         candidateStations.any { it.id == body.recommended_station.id }
+                                
+                                if (!isRecommendedValid) {
+                                    Log.e("PlanTrip", "STALE DATA DETECTED: Recommended station ${body.recommended_station?.name} is not in current candidate list!")
+                                }
+
+                                // VALIDATION: Consistency check
+                                val routePlanDist = body.route_plan.sumOf { it.distance_km ?: 0.0 }
+                                if (Math.abs(routePlanDist - body.total_distance_km) > 1.0) {
+                                    Log.e("PlanTrip", "INCONSISTENT RESPONSE: route_plan sum ($routePlanDist) != total_dist (${body.total_distance_km})")
+                                }
+
+                                // Update state only if valid
+                                planResponse = if (isRecommendedValid) body else body.copy(recommended_station = null, one_stop_possible = false, message = "Backend returned stale station")
+                                
+                                totalDistance = String.format(Locale.getDefault(), "%.1f km", body.total_distance_km)
+                                val time = body.total_trip_time_minutes ?: body.drive_time_minutes
+                                totalTime = String.format(Locale.getDefault(), "%.0f min", time)
                             }
                         }
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        Log.e("PlanTrip", "API call failed", e)
                     } finally {
                         isPlanning = false
                     }
@@ -171,7 +220,7 @@ fun PlanTripScreen(
                 TopAppBar(
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
                     title = {
@@ -232,7 +281,8 @@ fun PlanTripScreen(
                         distance = totalDistance,
                         duration = totalTime,
                         planResponse = planResponse,
-                        isPlanning = isPlanning
+                        isPlanning = isPlanning,
+                        destinationName = destinationName
                     )
                 }
             ) {
@@ -248,13 +298,17 @@ fun PlanTripScreen(
                         destinationLocation = destinationLatLng,
                         routePoints = routePoints,
                         chargingSpots = chargingSpots,
-                        recommendedSpot = planResponse?.recommended_station?.let {
-                            ChargingSpot(
-                                id = it.id,
-                                name = it.name,
-                                position = LatLng(it.latitude, it.longitude),
-                                address = it.address
-                            )
+                        recommendedSpot = planResponse?.let {
+                            if (it.one_stop_possible) {
+                                it.recommended_station?.let { station ->
+                                    ChargingSpot(
+                                        id = station.id,
+                                        name = station.name,
+                                        position = LatLng(station.latitude, station.longitude),
+                                        address = station.address
+                                    )
+                                }
+                            } else null
                         },
                         onDeviceLocationChanged = { loc ->
                             if (deviceLocation == null) {
@@ -287,7 +341,8 @@ fun TripDetailsSheetContent(
     distance: String,
     duration: String,
     planResponse: PlanTripResponse?,
-    isPlanning: Boolean
+    isPlanning: Boolean,
+    destinationName: String
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -315,7 +370,7 @@ fun TripDetailsSheetContent(
                     CircularProgressIndicator(color = Color(0xFF2E7D32))
                 }
             } else if (planResponse != null) {
-                RoutePlanCard(planResponse)
+                RoutePlanCard(planResponse, destinationName)
             } else {
                 RoutePlanCard(sampleRouteStops, sampleTrafficLegs)
             }
@@ -362,7 +417,7 @@ fun LocationInputCard(
                 ) {
                     Icon(Icons.Default.Place, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = destinationName, fontSize = 15.sp, color = Color.Black)
+                    Text(text = if (destinationName.isEmpty()) "Search destination" else destinationName, fontSize = 15.sp, color = if (destinationName.isEmpty()) Color.Gray else Color.Black)
                 }
             }
             IconButton(onClick = { /* TODO */ }) {
@@ -418,6 +473,8 @@ fun TripOverviewCard(
     planResponse: PlanTripResponse? = null,
     isPlanning: Boolean = false
 ) {
+    if (distance.isEmpty() && duration.isEmpty()) return
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -431,7 +488,7 @@ fun TripOverviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Trip Overview", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(text = "Trip Overview", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
                 if (isPlanning) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color(0xFF2E7D32))
                 } else {
@@ -463,15 +520,24 @@ fun TripOverviewCard(
                     Icon(Icons.Default.Bolt, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        if (planResponse?.recommended_station != null) {
-                            Text(text = "Charging stop recommended", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2E7D32))
-                            Text(text = "Stop for ${String.format(Locale.getDefault(), "%.0f", planResponse.charging_time_minutes)} min at ${planResponse.recommended_station.name}", fontSize = 12.sp, color = Color.DarkGray)
+                        if (planResponse != null) {
+                            if (planResponse.one_stop_possible && planResponse.recommended_station != null) {
+                                Text(text = "Charging stop recommended", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2E7D32))
+                                Text(
+                                    text = "Stop for ${String.format(Locale.getDefault(), "%.0f", planResponse.charging_time_minutes ?: 0.0)} min at ${planResponse.recommended_station.name}",
+                                    fontSize = 12.sp,
+                                    color = Color.DarkGray
+                                )
+                            } else {
+                                Text(text = planResponse.message, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.Gray)
+                                Text(text = "Adjust your route or vehicle settings", fontSize = 12.sp, color = Color.DarkGray)
+                            }
                         } else {
-                            Text(text = "No charging stop needed", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2E7D32))
+                            Text(text = "No charging stop recommended", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2E7D32))
                             Text(text = "Direct route to destination", fontSize = 12.sp, color = Color.DarkGray)
                         }
                     }
-                    if (planResponse?.recommended_station != null) {
+                    if (planResponse?.one_stop_possible == true && planResponse.recommended_station != null) {
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(20.dp))
                     }
                 }
@@ -494,7 +560,7 @@ fun OverviewVerticalDivider() {
 }
 
 @Composable
-fun RoutePlanCard(plan: PlanTripResponse) {
+fun RoutePlanCard(plan: PlanTripResponse, destinationName: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -504,21 +570,30 @@ fun RoutePlanCard(plan: PlanTripResponse) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             plan.route_plan.forEachIndexed { index, step ->
-                val icon = when (step.type) {
+                val icon = when (step.type.lowercase(Locale.getDefault())) {
                     "start" -> Icons.Default.Circle
                     "charging" -> Icons.Default.Bolt
                     "destination" -> Icons.Default.Place
                     else -> Icons.Default.Circle
                 }
-                val iconTint = when (step.type) {
+                val iconTint = when (step.type.lowercase(Locale.getDefault())) {
                     "start" -> Color(0xFF2196F3)
                     "charging" -> Color(0xFF2E7D32)
                     "destination" -> Color.Red
                     else -> Color.Gray
                 }
                 
+                // OVERRIDE NAMES FOR UI CONSISTENCY
+                val displayName = when (step.type.lowercase(Locale.getDefault())) {
+                    "start" -> "Your Location"
+                    "destination" -> if (destinationName.isNotEmpty()) destinationName else "Destination"
+                    else -> step.name
+                }
+                
+                Log.d("PlanTripUI", "Rendering step: type=${step.type}, name=$displayName")
+
                 RouteTimelineStep(
-                    step = step,
+                    step = step.copy(name = displayName),
                     isLast = index == plan.route_plan.size - 1,
                     icon = icon,
                     iconTint = iconTint
@@ -534,14 +609,14 @@ fun RouteTimelineStep(step: RoutePlanStep, isLast: Boolean, icon: ImageVector, i
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(32.dp)) {
             Surface(
                 shape = CircleShape,
-                color = if (step.type == "charging") iconTint else Color.White,
+                color = if (step.type.lowercase(Locale.getDefault()) == "charging") iconTint else Color.White,
                 modifier = Modifier.size(24.dp),
-                border = if (step.type != "charging") BorderStroke(2.dp, iconTint) else null
+                border = if (step.type.lowercase(Locale.getDefault()) != "charging") BorderStroke(2.dp, iconTint) else null
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (step.type == "charging") Color.White else iconTint,
+                    tint = if (step.type.lowercase(Locale.getDefault()) == "charging") Color.White else iconTint,
                     modifier = Modifier.padding(4.dp)
                 )
             }
@@ -556,10 +631,19 @@ fun RouteTimelineStep(step: RoutePlanStep, isLast: Boolean, icon: ImageVector, i
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(text = step.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    if (step.type == "charging") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = step.name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = Color.Black
+                    )
+                    if (step.type.lowercase(Locale.getDefault()) == "charging") {
                         Spacer(modifier = Modifier.height(4.dp))
                         Surface(
                             shape = RoundedCornerShape(4.dp),
@@ -577,9 +661,19 @@ fun RouteTimelineStep(step: RoutePlanStep, isLast: Boolean, icon: ImageVector, i
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     if (step.charging_time_minutes != null) {
-                        Text(text = "${String.format(Locale.getDefault(), "%.0f", step.charging_time_minutes)} min", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(
+                            text = "${String.format(Locale.getDefault(), "%.0f", step.charging_time_minutes)} min",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color.Black
+                        )
                     } else if (step.drive_time_minutes != null) {
-                        Text(text = "${String.format(Locale.getDefault(), "%.0f", step.drive_time_minutes)} min", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(
+                            text = "${String.format(Locale.getDefault(), "%.0f", step.drive_time_minutes)} min",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color.Black
+                        )
                     }
                 }
             }
@@ -646,7 +740,7 @@ fun RouteTimelineStop(stop: RouteStop, isLast: Boolean, legInfo: TrafficLeg?) {
         Column(modifier = Modifier.weight(1f)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text(text = stop.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(text = stop.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
                     Text(text = stop.address, fontSize = 12.sp, color = Color.Gray)
                     if (stop.isRecommendedStop) {
                         Spacer(modifier = Modifier.height(4.dp))
@@ -665,7 +759,7 @@ fun RouteTimelineStop(stop: RouteStop, isLast: Boolean, legInfo: TrafficLeg?) {
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(text = stop.batteryPercent, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(text = stop.batteryPercent, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
                     Text(text = stop.time, fontSize = 12.sp, color = Color.Gray)
                     if (stop.stopDuration != null) {
                         Text(text = stop.stopDuration, fontSize = 12.sp, color = Color.Gray)
@@ -714,14 +808,15 @@ fun EstimatedCostCard(cost: Double? = null) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(text = "Estimated Cost", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(text = "Estimated Cost", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
                 Text(text = "(including charging)", fontSize = 12.sp, color = Color.Gray)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = cost?.let { String.format(Locale.getDefault(), "₹%.0f", it) } ?: "₹0",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    color = Color.Black
                 )
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Black)
             }

@@ -131,35 +131,35 @@ fun MyVehiclesScreen(
 }
 
 @Composable
+
 fun VehiclesHeader(onAddVehicleClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "My Vehicles",
                 fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                fontWeight = FontWeight.Bold
             )
             Text(
                 text = "Manage and monitor all your EVs",
                 fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color.Gray
             )
         }
+        Spacer(modifier = Modifier.width(8.dp))
         Button(
-            onClick = onAddVehicleClick,
+            onClick = { /* TODO */ },
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-            modifier = Modifier.height(36.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Add Vehicle", fontSize = 12.sp)
+            Text("Add Vehicle", fontSize = 14.sp)
         }
     }
 }

@@ -1,10 +1,13 @@
 package com.example.evspot.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,6 +29,7 @@ import com.example.evspot.model.MapConfig
 import com.example.evspot.navigation.Screen
 import com.example.evspot.ui.components.*
 import com.example.evspot.ui.components.search.SuggestionList
+import com.example.evspot.ui.theme.EVSpotTheme
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import kotlinx.coroutines.launch
@@ -133,15 +138,15 @@ fun HomeScreen(
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
+                    .padding(16.dp) // PADDING AROUND THE CARD
                     .fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                shadowElevation = 8.dp
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(24.dp), // HIGHLY ROUNDED CORNERS
+                shadowElevation = 12.dp // PRONOUNCED SHADOW
             ) {
                 Column(
                     modifier = Modifier
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 8.dp)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     FloatingTopBar(
                         onNavigate = onNavigate,
@@ -209,7 +214,7 @@ fun DashboardSheetContent(
                     title = "Plan a Trip",
                     subtitle = "Plan your journey with charging stops",
                     icon = Icons.Default.Route,
-                    containerColor = Color(0xFF004D40),
+                    containerColor = Color(0xFF004D43),
                     contentColor = Color.White,
                     onClick = { onNavigate(Screen.TripPlanner.route) },
                     modifier = Modifier.weight(1f)
@@ -276,20 +281,11 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
                 modifier = Modifier.weight(1f)
             )
             QuickAccessCard(
-                title = "Wallet",
-                icon = Icons.Default.AccountBalanceWallet,
-                onClick = { onNavigate(Screen.Wallet.route) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            QuickAccessCard(
                 title = "Vehicle Health",
                 icon = Icons.Default.Favorite,
                 onClick = { onNavigate(Screen.Health.route) },
-                modifier = Modifier.weight(0.5f)
+                modifier = Modifier.weight(1f)
             )
-            Spacer(modifier = Modifier.weight(0.5f))
         }
     }
 }
@@ -303,95 +299,172 @@ fun FloatingTopBar(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit
 ) {
-    // We reuse the components from TopBar but make it floating and transparent
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp),
+            .height(80.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
+        // LOGO SECTION
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(start = 4.dp)
         ) {
             Image(
                 painter = painterResource(id = com.example.evspot.R.drawable.evspot_logo),
                 contentDescription = "EVSpot Logo",
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(32.dp)
             )
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // MODERN SEARCH BAR replacing "EvSpot" text
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp),
-                placeholder = { 
-                    Text(
-                        "Search location...", 
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant 
-                    ) 
-                },
-                leadingIcon = { 
-                    Icon(
-                        Icons.Default.Search, 
-                        contentDescription = null, 
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    ) 
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty() || isSearching) {
-                        IconButton(onClick = onClearSearch) {
-                            Icon(
-                                Icons.Default.Close, 
-                                contentDescription = "Clear search", 
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                },
-                shape = RoundedCornerShape(28.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                ),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge
+            Text(
+                text = "EVSpot",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Drive Green",
+                fontSize = 7.sp,
+                color = Color(0xFF2E7D32),
+                fontWeight = FontWeight.Bold
             )
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
+        // SEARCH BAR SECTION
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(44.dp) // SLIGHTLY SLEEKER
+                .background(
+                    color = Color(0xFFF1F8E9).copy(alpha = 0.6f), // LIGHT GREENISH TINT
+                    shape = RoundedCornerShape(22.dp)
+                )
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                // Real Input
+                BasicTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                    decorationBox = { innerTextField ->
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                "Search location or charging station",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                maxLines = 1
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
+                if (searchQuery.isNotEmpty() || isSearching) {
+                    IconButton(onClick = onClearSearch, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                    }
+                }
+
+                // Vertical Divider
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 6.dp)
+                        .width(1.dp)
+                        .height(20.dp)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+                )
+
+                // Filter Icon
+                Icon(
+                    Icons.Default.Tune,
+                    contentDescription = "Filter",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        // ACTIONS SECTION
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             BadgedBox(
                 badge = {
                     Badge(
-                        containerColor = Color.Red,
+                        containerColor = Color(0xFF4CAF50), // BRIGHTER GREEN FOR BADGE
                         contentColor = Color.White,
                         modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
                     ) {
-                        Text("3")
+                        Text("3", fontSize = 10.sp)
                     }
                 }
             ) {
-                IconButton(onClick = { onNavigate(Screen.Notifications.route) }) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.Black)
+                IconButton(onClick = { onNavigate(Screen.Notifications.route) }, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.Default.NotificationsNone, 
+                        contentDescription = "Notifications", 
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
-            Spacer(modifier = Modifier.width(4.dp))
-            IconButton(onClick = { onNavigate(Screen.Account.route) }) {
-                Icon(Icons.Default.AccountCircle, contentDescription = "Account", tint = Color.Black)
+
+            // Vertical Divider
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .width(1.dp)
+                    .height(24.dp)
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+            )
+
+            Surface(
+                onClick = { onNavigate(Screen.Account.route) },
+                shape = CircleShape,
+                color = Color(0xFFE8F5E9),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.Person, 
+                        contentDescription = "Account", 
+                        tint = Color(0xFF2E7D32),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DashboardSheetContentPreview() {
+    val sampleEvList = listOf(
+        EVInfo("EVSpot EV-01", 72, 246, temperature = 28)
+    )
+    EVSpotTheme {
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            DashboardSheetContent(
+                evList = sampleEvList,
+                onNavigate = {}
+            )
         }
     }
 }

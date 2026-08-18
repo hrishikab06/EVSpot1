@@ -96,14 +96,16 @@ data class CandidateStation(
 )
 
 data class PlanTripResponse(
+    val one_stop_possible: Boolean,
+    val message: String,
     val total_distance_km: Double,
     val drive_time_minutes: Double,
     val recommended_station: CandidateStation?,
-    val arrival_soc_percent: Double,
+    val arrival_soc_percent: Double?,
     val target_soc_percent: Double,
-    val charging_time_minutes: Double,
+    val charging_time_minutes: Double?,
     val charging_cost_inr: Double,
-    val total_trip_time_minutes: Double,
+    val total_trip_time_minutes: Double?,
     val route_plan: List<RoutePlanStep>
 )
 
