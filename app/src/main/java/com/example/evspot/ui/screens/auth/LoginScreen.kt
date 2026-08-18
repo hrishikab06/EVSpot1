@@ -1,4 +1,8 @@
 package com.example.evspot.ui.screens.auth
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.example.evspot.R
 
 import android.util.Log
 import androidx.compose.foundation.layout.*
@@ -33,9 +37,7 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        topBar = {
-            EVSpotAuthTopBar(onBack = { /* Optional: Navigate back or exit app */ })
-        }
+
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -44,8 +46,14 @@ fun LoginScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AuthMapBanner()
-            
+            Image(
+                painter = painterResource(id = R.drawable.img),
+                contentDescription = "EVSpot",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp),
+                contentScale = ContentScale.Crop
+            )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
