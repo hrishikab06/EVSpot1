@@ -1,4 +1,5 @@
-- [ ] Disable default zoom controls and refine radius circle logic in `MapScreen.kt`
-- [ ] Implement search bar visibility logic in `HomeScreen.kt`
-- [ ] Polishing search bar UI for a modern look in `HomeScreen.kt`
-- [ ] Verify build and all UI corrections
+- [x] Update `ChargingSpot` model with rating and price level fields
+- [x] Update `PlacesRepository.kt` to fetch advanced fields
+- [x] Update `MapScreen.kt` and `ChargingMap.kt` for blue highlights
+- [x] Implement ranking algorithm and filter UI in `NearbyChargersScreen.kt`
+- [x] Verify reordering and marker visibility
