@@ -12,7 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +28,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.evspot.data.api.RangePredictionRequest
+import com.example.evspot.data.api.RetrofitClient
+import com.example.evspot.ui.screens.VehicleViewModel
 import com.example.evspot.ui.theme.*
 import java.util.Locale
 
@@ -60,7 +64,49 @@ val mockVehicle = Vehicle(
 )
 
 @Composable
-fun VehicleDashboard(modifier: Modifier = Modifier) {
+fun VehicleDashboard(
+    modifier: Modifier = Modifier,
+    viewModel: VehicleViewModel = viewModel()
+) {
+    val bmsStatus by viewModel.bmsStatus.collectAsState()
+    
+    // Deterministic live vehicle data from central simulation
+    val currentVehicle = bmsStatus?.let { status ->
+        mockVehicle.copy(
+            battery = status.soc.toInt(),
+            range = status.remainingRange.toInt(),
+            temperature = status.batteryTemp.toInt(),
+            averageSpeed = status.speed.toInt()
+        )
+    } ?: mockVehicle
+
+    var predictedRange by remember { mutableStateOf<Double?>(null) }
+    var isRangeLoading by remember { mutableStateOf(false) }
+
+    // Re-predict range whenever BMS status changes (every 60 seconds)
+    LaunchedEffect(bmsStatus) {
+        val status = bmsStatus ?: return@LaunchedEffect
+        isRangeLoading = true
+        try {
+            val request = RangePredictionRequest(
+                soc = status.soc.toInt(),
+                battery_temp = status.batteryTemp.toInt(),
+                speed = status.speed.toInt(),
+                ac_on = if (status.acOn) 1 else 0,
+                distance_travelled = status.distanceTravelled.toInt(),
+                energy_consumed = status.energyConsumed
+            )
+            val response = RetrofitClient.instance.predictRange(request)
+            if (response.isSuccessful) {
+                predictedRange = response.body()?.predicted_range_km
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            isRangeLoading = false
+        }
+    }
+
     Scaffold(
         bottomBar = { BottomNavigationBar() },
         containerColor = BackgroundGray
@@ -75,10 +121,16 @@ fun VehicleDashboard(modifier: Modifier = Modifier) {
         ) {
             item { VehicleHeader() }
             item { TitleRow() }
-            item { VehicleHeroCard(mockVehicle) }
-            item { ChargingStatusCard(mockVehicle.charging) }
-            item { VehicleHealthSection(mockVehicle) }
-            item { OdometerEfficiencyCard(mockVehicle) }
+            item { 
+                VehicleHeroCard(
+                    vehicle = currentVehicle,
+                    predictedRange = predictedRange,
+                    isRangeLoading = isRangeLoading
+                ) 
+            }
+            item { ChargingStatusCard(currentVehicle.charging) }
+            item { VehicleHealthSection(currentVehicle) }
+            item { OdometerEfficiencyCard(currentVehicle) }
             item { QuickActionsSection() }
         }
     }
@@ -192,7 +244,11 @@ fun TitleRow() {
 }
 
 @Composable
-fun VehicleHeroCard(vehicle: Vehicle) {
+fun VehicleHeroCard(
+    vehicle: Vehicle,
+    predictedRange: Double? = null,
+    isRangeLoading: Boolean = false
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(24.dp),
@@ -277,12 +333,20 @@ fun VehicleHeroCard(vehicle: Vehicle) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = vehicle.range.toString(),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkNavy
-                        )
+                        if (isRangeLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp).padding(4.dp),
+                                strokeWidth = 2.dp,
+                                color = VoltGreen
+                            )
+                        } else {
+                            Text(
+                                text = predictedRange?.let { String.format(Locale.getDefault(), "%.0f", it) } ?: vehicle.range.toString(),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DarkNavy
+                            )
+                        }
                         Text(
                             text = " km",
                             fontSize = 14.sp,

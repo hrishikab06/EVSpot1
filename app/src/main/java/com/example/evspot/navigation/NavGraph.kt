@@ -21,14 +21,14 @@ fun AppNavGraph(navController: NavHostController) {
     val themeViewModel: ThemeViewModel = viewModel()
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash.route
+        startDestination = Screen.Splash.route,
     ) {
         composable(Screen.Splash.route) {
-            SplashScreen(onNavigateToNext = {
+            SplashScreen {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Splash.route) { inclusive = true }
                 }
-            })
+            }
         }
         composable(Screen.Account.route) {
             AccountScreen(
@@ -128,7 +128,10 @@ fun AppNavGraph(navController: NavHostController) {
             EnergyUsageScreen(onBack = { navController.popBackStack() }) 
         }
         composable(Screen.Health.route) { 
-            VehicleHealthScreen(onBack = { navController.popBackStack() }) 
+            VehicleHealthScreen(
+                onBack = { navController.popBackStack() },
+                viewModel = vehicleViewModel
+            ) 
         }
         composable(Screen.PastTrips.route) {
             PastTripsScreen(

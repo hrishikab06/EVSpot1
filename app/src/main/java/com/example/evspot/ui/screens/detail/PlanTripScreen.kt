@@ -3,6 +3,7 @@ package com.example.evspot.ui.screens.detail
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -17,12 +18,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.BuildConfig
+import com.example.evspot.data.PlacesRepository
+import com.example.evspot.data.RouteRepository
+import com.example.evspot.model.ChargingSpot
+import com.example.evspot.model.MapConfig
+import com.example.evspot.data.api.RetrofitClient
+import com.example.evspot.data.api.PlanTripRequest
+import com.example.evspot.data.api.PlanTripResponse
+import com.example.evspot.data.api.RoutePlanStep
+import com.example.evspot.data.api.CandidateStation
 import com.example.evspot.ui.components.ChargingMap
+import com.example.evspot.ui.components.search.SearchOverlay
 import com.example.evspot.ui.theme.EVSpotTheme
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 data class TripFilter(
     val label: String,
@@ -53,99 +70,270 @@ data class TrafficLeg(
 fun PlanTripScreen(
     onBackClick: () -> Unit = {}
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                title = {
-                    Text(
-                        text = "Plan a Trip",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                },
-                actions = {
-                    Box {
-                        IconButton(onClick = { /* TODO */ }) {
-                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
-                        }
-                        Surface(
-                            shape = CircleShape,
-                            color = Color.Red,
-                            modifier = Modifier
-                                .size(16.dp)
-                                .align(Alignment.TopEnd)
-                                .padding(top = 8.dp, end = 8.dp)
-                        ) {
-                            Text(
-                                text = "3",
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.wrapContentSize(Alignment.Center)
-                            )
-                        }
-                    }
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Default.AccountCircle, contentDescription = "Profile", modifier = Modifier.size(32.dp))
-                    }
-                }
-            )
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val placesRepository = remember { PlacesRepository(context) }
+    val routeRepository = remember { RouteRepository(BuildConfig.MAPS_API_KEY) }
+    val scaffoldState = rememberBottomSheetScaffoldState()
+
+    var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
+    var destinationName by remember { mutableStateOf("Navi Mumbai Airport, Mumbai") }
+    var destinationLatLng by remember { mutableStateOf<LatLng?>(null) }
+    
+    var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
+    var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
+    
+    var totalDistance by remember { mutableStateOf("42 km") }
+    var totalTime by remember { mutableStateOf("1 h 25 min") }
+    
+    var planResponse by remember { mutableStateOf<PlanTripResponse?>(null) }
+    var isPlanning by remember { mutableStateOf(false) }
+
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var suggestions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length > 2) {
+            suggestions = placesRepository.getAutocompleteSuggestions(searchQuery)
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color(0xFFF8FBF8))
-        ) {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item {
-                    LocationInputCard()
-                }
-                item {
-                    TripFilterChips(sampleFilters)
-                }
-                item {
-                    MapPlaceholder()
-                }
-                item {
-                    TripOverviewCard()
-                }
-                item {
-                    Text(
-                        text = "Route Plan",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                }
-                item {
-                    RoutePlanCard(sampleRouteStops, sampleTrafficLegs)
-                }
-                item {
-                    EstimatedCostCard()
-                }
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
+    }
+
+    val onPlaceSelected: (AutocompletePrediction) -> Unit = { prediction ->
+        destinationName = prediction.getPrimaryText(null).toString()
+        isSearchActive = false
+        scope.launch {
+            val latLng = placesRepository.getPlaceLatLng(prediction.placeId)
+            destinationLatLng = latLng
+            if (latLng != null && deviceLocation != null) {
+                val result = routeRepository.getRoute(deviceLocation!!, latLng)
+                result?.routes?.firstOrNull()?.let { route ->
+                    val path = route.overviewPolyline.decodePath().map { LatLng(it.lat, it.lng) }
+                    routePoints = path
+                    totalDistance = route.legs.firstOrNull()?.distance?.humanReadable ?: ""
+                    totalTime = route.legs.firstOrNull()?.duration?.humanReadable ?: ""
+                    
+                    // Search for charging stations along route
+                    chargingSpots = placesRepository.searchAlongRoute(path, MapConfig.searchRadius.toDouble())
+                    
+                    // Call backend to plan EV trip
+                    isPlanning = true
+                    try {
+                        val request = PlanTripRequest(
+                            current_lat = deviceLocation!!.latitude,
+                            current_lng = deviceLocation!!.longitude,
+                            destination_lat = latLng.latitude,
+                            destination_lng = latLng.longitude,
+                            current_soc = 18.0,
+                            battery_temp = 31.0,
+                            battery_capacity_kwh = 40.5,
+                            candidate_stations = chargingSpots.map {
+                                CandidateStation(
+                                    id = it.id,
+                                    name = it.name,
+                                    address = it.address,
+                                    latitude = it.position.latitude,
+                                    longitude = it.position.longitude
+                                )
+                            }
+                        )
+                        val response = RetrofitClient.instance.planTrip(request)
+                        if (response.isSuccessful) {
+                            planResponse = response.body()
+                            // Update display values if backend provided them
+                            planResponse?.let {
+                                totalDistance = String.format(Locale.getDefault(), "%.1f km", it.total_distance_km)
+                                totalTime = String.format(Locale.getDefault(), "%.0f min", it.total_trip_time_minutes)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    } finally {
+                        isPlanning = false
+                    }
                 }
             }
-            BottomActionButtons()
+        }
+    }
+
+    if (isSearchActive) {
+        BackHandler { isSearchActive = false }
+        SearchOverlay(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            suggestions = suggestions,
+            onSuggestionClick = onPlaceSelected,
+            onClose = { isSearchActive = false }
+        )
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = "Plan a Trip",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+                    },
+                    actions = {
+                        Box {
+                            IconButton(onClick = { /* TODO */ }) {
+                                Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = Color.Red,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 8.dp, end = 8.dp)
+                            ) {
+                                Text(
+                                    text = "3",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.wrapContentSize(Alignment.Center)
+                                )
+                            }
+                        }
+                        IconButton(onClick = { /* TODO */ }) {
+                            Icon(Icons.Default.AccountCircle, contentDescription = "Profile", modifier = Modifier.size(32.dp))
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.White.copy(alpha = 0.9f)
+                    )
+                )
+            },
+            bottomBar = {
+                BottomActionButtons()
+            }
+        ) { innerPadding ->
+            BottomSheetScaffold(
+                scaffoldState = scaffoldState,
+                sheetPeekHeight = 280.dp,
+                sheetContainerColor = Color.White,
+                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                sheetShadowElevation = 16.dp,
+                sheetDragHandle = {
+                    BottomSheetDefaults.DragHandle(
+                        color = Color.LightGray.copy(alpha = 0.5f)
+                    )
+                },
+                sheetContent = {
+                    TripDetailsSheetContent(
+                        distance = totalDistance,
+                        duration = totalTime,
+                        planResponse = planResponse,
+                        isPlanning = isPlanning
+                    )
+                }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    // Full screen map as background
+                    ChargingMap(
+                        modifier = Modifier.fillMaxSize(),
+                        bottomPadding = 280.dp,
+                        destinationLocation = destinationLatLng,
+                        routePoints = routePoints,
+                        chargingSpots = chargingSpots,
+                        recommendedSpot = planResponse?.recommended_station?.let {
+                            ChargingSpot(
+                                id = it.id,
+                                name = it.name,
+                                position = LatLng(it.latitude, it.longitude),
+                                address = it.address
+                            )
+                        },
+                        onDeviceLocationChanged = { loc ->
+                            if (deviceLocation == null) {
+                                deviceLocation = loc
+                            }
+                        }
+                    )
+
+                    // Floating Top UI
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        LocationInputCard(
+                            destinationName = destinationName,
+                            onDestinationClick = { isSearchActive = true }
+                        )
+                        TripFilterChips(sampleFilters)
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun LocationInputCard() {
+fun TripDetailsSheetContent(
+    distance: String,
+    duration: String,
+    planResponse: PlanTripResponse?,
+    isPlanning: Boolean
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            TripOverviewCard(
+                distance = distance,
+                duration = duration,
+                planResponse = planResponse,
+                isPlanning = isPlanning
+            )
+        }
+        item {
+            Text(
+                text = "Route Plan",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+        }
+        item {
+            if (isPlanning) {
+                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF2E7D32))
+                }
+            } else if (planResponse != null) {
+                RoutePlanCard(planResponse)
+            } else {
+                RoutePlanCard(sampleRouteStops, sampleTrafficLegs)
+            }
+        }
+        item {
+            EstimatedCostCard(planResponse?.charging_cost_inr)
+        }
+        item {
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+fun LocationInputCard(
+    destinationName: String,
+    onDestinationClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -166,10 +354,15 @@ fun LocationInputCard() {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(color = Color(0xFFF5F5F5))
                 Spacer(modifier = Modifier.height(12.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDestinationClick() },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(Icons.Default.Place, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Navi Mumbai Airport, Mumbai", fontSize = 15.sp, color = Color.Black)
+                    Text(text = destinationName, fontSize = 15.sp, color = Color.Black)
                 }
             }
             IconButton(onClick = { /* TODO */ }) {
@@ -219,23 +412,12 @@ fun TripFilterChips(filters: List<TripFilter>) {
 }
 
 @Composable
-fun MapPlaceholder() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(250.dp)
-            .background(Color(0xFFE0E0E0), RoundedCornerShape(16.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        ChargingMap(
-            modifier = Modifier.fillMaxSize(),
-            isLiteMode = true
-        )
-    }
-}
-
-@Composable
-fun TripOverviewCard() {
+fun TripOverviewCard(
+    distance: String = "42 km",
+    duration: String = "1 h 25 min",
+    planResponse: PlanTripResponse? = null,
+    isPlanning: Boolean = false
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -250,19 +432,23 @@ fun TripOverviewCard() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Trip Overview", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                TextButton(onClick = { /* TODO */ }) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF2E7D32))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Edit Trip", color = Color(0xFF2E7D32), fontSize = 14.sp)
+                if (isPlanning) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color(0xFF2E7D32))
+                } else {
+                    TextButton(onClick = { /* TODO */ }) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF2E7D32))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Edit Trip", color = Color(0xFF2E7D32), fontSize = 14.sp)
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                OverviewItem(Modifier.weight(1f), "Total Distance", "42 km")
+                OverviewItem(Modifier.weight(1f), "Total Distance", distance)
                 OverviewVerticalDivider()
-                OverviewItem(Modifier.weight(1f), "Total Time (with stop)", "1 h 25 min")
+                OverviewItem(Modifier.weight(1f), "Total Time (with stop)", duration)
                 OverviewVerticalDivider()
-                OverviewItem(Modifier.weight(1f), "Est. Energy Needed", "18.2 kWh")
+                OverviewItem(Modifier.weight(1f), "Est. Energy Needed", "18.2 kWh") // Marking as static for now
             }
             Spacer(modifier = Modifier.height(16.dp))
             Surface(
@@ -277,10 +463,17 @@ fun TripOverviewCard() {
                     Icon(Icons.Default.Bolt, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Charging stop recommended", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2E7D32))
-                        Text(text = "1 stop for 20 min at GreenCharge Station", fontSize = 12.sp, color = Color.DarkGray)
+                        if (planResponse?.recommended_station != null) {
+                            Text(text = "Charging stop recommended", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2E7D32))
+                            Text(text = "Stop for ${String.format(Locale.getDefault(), "%.0f", planResponse.charging_time_minutes)} min at ${planResponse.recommended_station.name}", fontSize = 12.sp, color = Color.DarkGray)
+                        } else {
+                            Text(text = "No charging stop needed", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF2E7D32))
+                            Text(text = "Direct route to destination", fontSize = 12.sp, color = Color.DarkGray)
+                        }
                     }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(20.dp))
+                    if (planResponse?.recommended_station != null) {
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(20.dp))
+                    }
                 }
             }
         }
@@ -298,6 +491,108 @@ fun OverviewItem(modifier: Modifier, label: String, value: String) {
 @Composable
 fun OverviewVerticalDivider() {
     Box(modifier = Modifier.height(32.dp).width(1.dp).background(Color(0xFFEEEEEE)))
+}
+
+@Composable
+fun RoutePlanCard(plan: PlanTripResponse) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            plan.route_plan.forEachIndexed { index, step ->
+                val icon = when (step.type) {
+                    "start" -> Icons.Default.Circle
+                    "charging" -> Icons.Default.Bolt
+                    "destination" -> Icons.Default.Place
+                    else -> Icons.Default.Circle
+                }
+                val iconTint = when (step.type) {
+                    "start" -> Color(0xFF2196F3)
+                    "charging" -> Color(0xFF2E7D32)
+                    "destination" -> Color.Red
+                    else -> Color.Gray
+                }
+                
+                RouteTimelineStep(
+                    step = step,
+                    isLast = index == plan.route_plan.size - 1,
+                    icon = icon,
+                    iconTint = iconTint
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RouteTimelineStep(step: RoutePlanStep, isLast: Boolean, icon: ImageVector, iconTint: Color) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(32.dp)) {
+            Surface(
+                shape = CircleShape,
+                color = if (step.type == "charging") iconTint else Color.White,
+                modifier = Modifier.size(24.dp),
+                border = if (step.type != "charging") BorderStroke(2.dp, iconTint) else null
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (step.type == "charging") Color.White else iconTint,
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
+            if (!isLast) {
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .height(60.dp)
+                        .background(Color(0xFFE0E0E0))
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text(text = step.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    if (step.type == "charging") {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color(0xFFE8F5E9)
+                        ) {
+                            Text(
+                                text = "Recommended Stop",
+                                color = Color(0xFF2E7D32),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    if (step.charging_time_minutes != null) {
+                        Text(text = "${String.format(Locale.getDefault(), "%.0f", step.charging_time_minutes)} min", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    } else if (step.drive_time_minutes != null) {
+                        Text(text = "${String.format(Locale.getDefault(), "%.0f", step.drive_time_minutes)} min", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                }
+            }
+            
+            if (step.distance_km != null) {
+                Text(text = "${String.format(Locale.getDefault(), "%.1f", step.distance_km)} km", fontSize = 12.sp, color = Color.Gray)
+            }
+
+            if (!isLast) {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
 }
 
 @Composable
@@ -405,7 +700,7 @@ fun RouteTimelineStop(stop: RouteStop, isLast: Boolean, legInfo: TrafficLeg?) {
 }
 
 @Composable
-fun EstimatedCostCard() {
+fun EstimatedCostCard(cost: Double? = null) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -423,7 +718,11 @@ fun EstimatedCostCard() {
                 Text(text = "(including charging)", fontSize = 12.sp, color = Color.Gray)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "₹312 – ₹340", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(
+                    text = cost?.let { String.format(Locale.getDefault(), "₹%.0f", it) } ?: "₹0",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Black)
             }
         }

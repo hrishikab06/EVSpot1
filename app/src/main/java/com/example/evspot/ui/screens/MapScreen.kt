@@ -31,8 +31,11 @@ fun MapScreen(
     chargingSpots: List<ChargingSpot> = emptyList(),
     liteModeEnabled: Boolean = false,
     vehicleLocation: LatLng? = null,
+    destinationLocation: LatLng? = null,
+    routePoints: List<LatLng> = emptyList(),
     searchCenter: LatLng? = null,
     searchRadius: Double = MapConfig.searchRadius.toDouble(),
+    recommendedSpot: ChargingSpot? = null,
     onMapClick: ((LatLng) -> Unit)? = null,
     onDeviceLocationChanged: ((LatLng) -> Unit)? = null,
     cameraPositionState: CameraPositionState = rememberCameraPositionState {
@@ -44,6 +47,7 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
 
     var deviceLocation by remember { mutableStateOf<LatLng?>(null) }
+    var initialLocationFetched by remember { mutableStateOf(false) }
     
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -80,8 +84,9 @@ fun MapScreen(
                         val latLng = LatLng(it.latitude, it.longitude)
                         deviceLocation = latLng
                         onDeviceLocationChanged?.invoke(latLng)
-                        if (searchCenter == null) {
+                        if (searchCenter == null && !initialLocationFetched) {
                             cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(latLng, MapConfig.defaultZoom))
+                            initialLocationFetched = true
                         }
                     }
                 }
@@ -101,9 +106,10 @@ fun MapScreen(
                                 val latLng = LatLng(location.latitude, location.longitude)
                                 deviceLocation = latLng
                                 onDeviceLocationChanged?.invoke(latLng)
-                                if (searchCenter == null) {
+                                if (searchCenter == null && !initialLocationFetched) {
                                     scope.launch {
                                         cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, MapConfig.defaultZoom))
+                                        initialLocationFetched = true
                                     }
                                 }
                             }
@@ -132,18 +138,31 @@ fun MapScreen(
         googleMapOptionsFactory = {
             GoogleMapOptions().liteMode(liteModeEnabled)
         },
-        uiSettings = MapUiSettings(myLocationButtonEnabled = hasLocationPermission),
+        uiSettings = MapUiSettings(
+            myLocationButtonEnabled = hasLocationPermission,
+            zoomControlsEnabled = false // REMOVE DUPLICATE ZOOM CONTROLS
+        ),
         onMapClick = onMapClick
     ) {
-        // Search Radius Circle
-        val circleCenter = searchCenter ?: deviceLocation ?: MapConfig.DEFAULT_LOCATION
-        Circle(
-            center = circleCenter,
-            radius = searchRadius,
-            fillColor = Color(0x224CAF50), // Very light/dim green
-            strokeColor = Color(0x884CAF50), // Subtle green border
-            strokeWidth = 2f
-        )
+        // Search Radius Circle - ONLY SHOW AROUND SEARCHED CENTER
+        searchCenter?.let { center ->
+            Circle(
+                center = center,
+                radius = searchRadius,
+                fillColor = Color(0x224CAF50), // Very light/dim green
+                strokeColor = Color(0x884CAF50), // Subtle green border
+                strokeWidth = 2f
+            )
+        }
+
+        // Route Polyline
+        if (routePoints.isNotEmpty()) {
+            Polyline(
+                points = routePoints,
+                color = Color(0xFF2E7D32),
+                width = 5f
+            )
+        }
 
         // Vehicle Marker - Uses provided location or device location, falls back to default
         val vehiclePos = vehicleLocation ?: deviceLocation ?: MapConfig.DEFAULT_LOCATION
@@ -154,11 +173,31 @@ fun MapScreen(
             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
         )
 
+        // Selected Search Center Marker
+        searchCenter?.let {
+            Marker(
+                state = MarkerState(position = it),
+                title = "Search Center",
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+            )
+        }
+
         chargingSpots.forEach { spot ->
             Marker(
                 state = MarkerState(position = spot.position),
                 title = spot.name,
-                snippet = spot.address
+                snippet = spot.address,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+            )
+        }
+
+        // Recommended Spot Marker
+        recommendedSpot?.let { spot ->
+            Marker(
+                state = MarkerState(position = spot.position),
+                title = "Recommended: ${spot.name}",
+                snippet = spot.address,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)
             )
         }
     }

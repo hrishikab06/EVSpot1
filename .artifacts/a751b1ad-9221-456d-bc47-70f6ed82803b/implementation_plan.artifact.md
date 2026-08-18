@@ -1,36 +1,48 @@
-# Implementation Plan - Nearby Stations Layout Fix
+# Implementation Plan - Nearby Charging Recommendation Algorithm
 
-This plan addresses the layout compression and squeezing issues in the `Nearby Stations` screen while preserving the existing UI design.
+This plan implements a deterministic scoring and ranking algorithm for the Nearby Charging Stations feature, including user-selectable filters and map highlights for recommended stations.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> This fix only modifies the layout constraints (weights and widths) of the existing `StationCard` to ensure it uses the screen width correctly and prevents text squeezing. No visual design changes are being made.
+> Google Places API (New) has limited support for EV-specific data like charging speed or per-kWh cost. The algorithm will prioritize available metrics (Distance, Rating, Price Level) and handle missing fields gracefully without inventing fake data.
 
 ## Proposed Changes
 
+### Data Models
+
+#### [MODIFY] [ChargingSpot.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/model/ChargingSpot.kt)
+*   Add `rating: Double?`, `userRatingsTotal: Int?`, and `priceLevel: Int?` to the data class.
+
+### Repositories
+
+#### [MODIFY] [PlacesRepository.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/data/PlacesRepository.kt)
+*   Update `searchChargingStations` and `searchAlongRoute` to request `RATING`, `USER_RATING_COUNT`, and `PRICE_LEVEL` fields from the Places SDK.
+*   Populate the new fields in the `ChargingSpot` objects.
+
 ### UI Components
 
+#### [MODIFY] [MapScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/MapScreen.kt)
+*   Add `highlightedSpotId: String?` parameter.
+*   Update marker rendering logic: if a spot matches the `highlightedSpotId`, set its marker color to Azure (Blue).
+
+#### [MODIFY] [ChargingMap.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/components/ChargingMap.kt)
+*   Add `highlightedSpotId: String?` and pass it down to `MapScreen`.
+
 #### [MODIFY] [NearbyChargersScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/NearbyChargersScreen.kt)
-
-*   **`StationCard` Refactoring (Layout Constraints only):**
-    *   In the top `Row` of the card, add `Modifier.weight(1f)` to the left `Column` (containing the station name, location, and distance). This ensures the left column takes up all available space and correctly wraps text, while pushing the right column (availability, price, rating) to the end without being squeezed.
-    *   Add a small end padding to the left `Column` to prevent text from touching the right-side components.
-    *   In the bottom `Row` of the card, add `Modifier.weight(1f)` to the inner `Row` (containing power, connectors, and hours). This prevents the "View Details" button from being pushed off-screen or squeezed by long metadata text.
-    *   Ensure all `Text` components use idiomatic wrapping behavior by removing any unintended width constraints.
-
-*   **`NearbyStationsSheetContent` Verification:**
-    *   Confirm the `LazyColumn` and `StationCard` correctly fill the maximum width provided by the `BottomSheetScaffold`.
+*   **Ranking Logic**: Implement `calculateEvSpotScore` based on Distance (40%), Cost/PriceLevel (25%), Rating (15%), etc.
+*   **Filter UI**: Add a horizontal scrollable row of compact filter chips (Recommended, Nearest, Cheapest, Fastest, Rating) with Material icons.
+*   **State Management**: Track the selected filter and re-rank the `chargerStations` list immediately.
+*   **Map Integration**: Identify the top-ranked station for the selected filter and pass its ID as the `highlightedSpotId` to the map.
 
 ## Verification Plan
 
 ### Automated Tests
-*   Run `gradlew :app:assembleDebug` to verify the build.
+*   Run `gradlew :app:assembleDebug` to ensure the project builds successfully.
 
 ### Manual Verification
-*   Open the "Find Nearby" screen.
-*   Verify that charging station cards occupy the full width of the screen (minus standard margins).
-*   Verify that long station names and addresses wrap correctly over multiple lines instead of squeezing into a narrow column.
-*   Verify that the price, rating, and availability information on the right side of the card are correctly aligned to the end and not overlapping with the station name.
-*   Verify that the "View Details" button is clearly visible and correctly positioned at the bottom-right of the card.
-*   Confirm that the map and Places API functionality are still active and working.
+1.  **Filter Selection**: Open "Find Nearby" and tap different filters. Verify the list reorders instantly.
+2.  **Map Highlights**: Verify that only the top-ranked station for the active filter is colored BLUE on the map.
+3.  **Accuracy**: Verify "Nearest" actually puts the closest station at the top.
+4.  **Graceful Handling**: Ensure stations with missing ratings or price levels are still rankable and don't cause crashes.
+5.  **Isolation**: Confirm that "Plan a Trip" and other screens remain unchanged.

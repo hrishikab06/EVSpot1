@@ -1,21 +1,24 @@
-# Walkthrough - Nearby Stations Layout Fix
+# Walkthrough - Home Page UI & Interaction Corrections
 
-I have fixed the layout compression issues in the `Nearby Stations` screen. The charging station cards now use the full available screen width correctly, and text wraps as expected without squeezing the metadata or buttons.
+I have polished the Home page UI, improved the search interaction, and refined the map visuals to provide a cleaner and more professional user experience.
 
 ## Changes Made
 
-### 1. `NearbyChargersScreen.kt`
-*   **StationCard Layout Fixes**:
-    *   Added `Modifier.weight(1f)` to the left-side `Column` in the main card row. This ensures the station name, location, and distance information take up the available horizontal space and wrap properly, preventing the "squeezed" appearance.
-    *   Added `Modifier.weight(1f, fill = false)` to the station name `Text` component to handle long names gracefully while keeping the type badge visible.
-    *   Added `Modifier.weight(1f)` to the metadata `Row` (power, connectors, hours) to ensure the "View Details" button is correctly positioned at the end of the card and not pushed off-screen.
-    *   Used `Modifier.alignByBaseline()` for the metadata text components to ensure consistent vertical alignment across different font sizes.
-    *   Added `PaddingValues` to the "View Details" button to ensure it maintains its proportion while occupying the correct space.
-    *   Preserved all existing visual styles, colors, icons, and typography as per the reference design.
+### 1. Modern Search Bar
+- **Modernized UI**: Refactored the search bar into a pill-shaped design with `RoundedCornerShape(28.dp)`. It now uses a subtle background color and elevation that matches modern map applications.
+- **Improved Padding & Typography**: Added appropriate horizontal padding and switched to `MaterialTheme.typography.bodyLarge` for a cleaner look.
+- **Consistent Icons**: Styled the search and close icons to align with the primary EVSpot color scheme.
+
+### 2. Context-Aware Visibility
+- **Dynamic Hiding**: Linked the search bar's visibility to the `BottomSheetScaffold` state. When the user drags the bottom panel up to expand the map, the search bar smoothly disappears, allowing the map to fill the entire screen without distraction.
+- **Automatic Return**: The search bar reappears immediately when the panel is collapsed back to its peek height.
+
+### 3. Map Visual Refinement
+- **Removed Duplicate Zooms**: Disabled the default Google Maps UI zoom controls. Now, only the custom EVSpot-branded zoom buttons are visible, maintaining a single, consistent set of controls.
+- **Search-Specific Radius**: Refined the radius circle logic. The light-green 5km range circle now only appears when a search is actually performed. On the initial load (current location only), the circle is hidden to keep the map uncluttered.
 
 ## Verification Results
-*   **Build**: `gradlew :app:assembleDebug` completed successfully.
-*   **Functionality**:
-    *   The map functionality (current location, Places API results, markers, search radius) remains fully intact.
-    *   The bottom sheet interaction and expandable map behavior are preserved.
-    *   The layout is now responsive and handles long text strings without vertical character wrapping.
+- **Build**: `gradlew :app:assembleDebug` completed successfully.
+- **Visuals**: Search bar is modern and pill-shaped; only one set of zoom controls is visible.
+- **Behavior**: Search bar hides correctly on map expansion and returns on collapse. Range circle only appears around searched locations.
+- **Functionality**: Current location, search, and charging station markers remain fully functional and distinguishable.
