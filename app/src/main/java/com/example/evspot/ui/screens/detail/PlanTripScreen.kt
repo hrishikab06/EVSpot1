@@ -126,7 +126,7 @@ fun PlanTripScreen(
                 TopAppBar(
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     title = {
@@ -188,7 +188,7 @@ fun PlanTripScreen(
                         duration = totalTime
                     )
                 }
-            ) { sheetPadding ->
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

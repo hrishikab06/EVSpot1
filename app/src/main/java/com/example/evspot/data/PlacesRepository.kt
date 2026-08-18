@@ -15,8 +15,8 @@ import com.google.android.libraries.places.api.model.AutocompletePrediction
 import kotlinx.coroutines.tasks.await
 
 class PlacesRepository(context: Context) {
-    private val placesClient: PlacesClient = Places.createClient(context)
-    private val TAG = "PlacesRepository"
+    private val placesClient: PlacesClient by lazy { Places.createClient(context) }
+    private val tag = "PlacesRepository"
 
     suspend fun getAutocompleteSuggestions(query: String): List<AutocompletePrediction> {
         val request = FindAutocompletePredictionsRequest.builder()
@@ -26,7 +26,7 @@ class PlacesRepository(context: Context) {
             val response = placesClient.findAutocompletePredictions(request).await()
             response.autocompletePredictions
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching suggestions", e)
+            Log.e(tag, "Error fetching suggestions", e)
             emptyList()
         }
     }
@@ -38,7 +38,7 @@ class PlacesRepository(context: Context) {
             val response = placesClient.fetchPlace(request).await()
             response.place.location
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching place details", e)
+            Log.e(tag, "Error fetching place details", e)
             null
         }
     }
@@ -47,7 +47,7 @@ class PlacesRepository(context: Context) {
         center: LatLng,
         radiusMeters: Double
     ): List<ChargingSpot> {
-        Log.d(TAG, "Searching charging stations around: $center with radius: $radiusMeters")
+        Log.d(tag, "Searching charging stations around: $center with radius: $radiusMeters")
         
         val placeFields: List<Place.Field> = listOf(
             Place.Field.ID,
@@ -73,13 +73,13 @@ class PlacesRepository(context: Context) {
                     address = place.formattedAddress ?: "Unknown location"
                 )
             }
-            Log.d(TAG, "Found ${spots.size} stations")
+            Log.d(tag, "Found ${spots.size} stations")
             spots.forEach { spot ->
-                Log.d(TAG, "Station: ${spot.name} at ${spot.position}")
+                Log.d(tag, "Station: ${spot.name} at ${spot.position}")
             }
             spots
         } catch (e: Exception) {
-            Log.e(TAG, "Error searching charging stations: ${e.message}", e)
+            Log.e(tag, "Error searching charging stations: ${e.message}", e)
             // Re-throw or return specific error state if needed, but for now log and empty
             emptyList()
         }

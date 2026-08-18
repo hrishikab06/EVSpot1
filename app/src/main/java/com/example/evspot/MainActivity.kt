@@ -1,7 +1,6 @@
 package com.example.evspot
 import com.razorpay.Checkout
 import com.razorpay.PaymentResultListener
-import com.example.evspot.ui.screens.detail.PlanTripScreen
 import org.json.JSONObject
 import android.os.Bundle
 import androidx.activity.ComponentActivity

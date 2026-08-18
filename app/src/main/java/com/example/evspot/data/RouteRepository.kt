@@ -9,9 +9,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class RouteRepository(private val apiKey: String) {
-    private val geoApiContext = GeoApiContext.Builder()
-        .apiKey(apiKey)
-        .build()
+    private val geoApiContext by lazy {
+        GeoApiContext.Builder()
+            .apiKey(apiKey)
+            .build()
+    }
 
     suspend fun getRoute(origin: LatLng, destination: LatLng): DirectionsResult? = withContext(Dispatchers.IO) {
         try {
@@ -21,6 +23,7 @@ class RouteRepository(private val apiKey: String) {
                 .destination(com.google.maps.model.LatLng(destination.latitude, destination.longitude))
                 .await()
         } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }

@@ -1,7 +1,6 @@
 package com.example.evspot.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evspot.data.PlacesRepository
 import com.example.evspot.model.ChargingSpot
 import com.example.evspot.model.EVInfo
@@ -33,9 +33,14 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    evList: List<EVInfo> = listOf(EVInfo("EVSpot EV-01", 72, 246)),
-    onNavigate: (String) -> Unit = {}
+    onNavigate: (String) -> Unit = {},
+    vehicleViewModel: VehicleViewModel = viewModel()
 ) {
+    val bmsStatus by vehicleViewModel.bmsStatus.collectAsState()
+    val evList = bmsStatus?.let { status ->
+        listOf(EVInfo("EVSpot EV-01", status.soc.toInt(), status.remainingRange.toInt(), temperature = status.batteryTemp.toInt()))
+    } ?: listOf(EVInfo("EVSpot EV-01", 72, 246))
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val placesRepository = remember { PlacesRepository(context) }
