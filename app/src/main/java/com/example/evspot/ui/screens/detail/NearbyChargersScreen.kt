@@ -1,8 +1,8 @@
 package com.example.evspot.ui.screens.detail
 
-import androidx.compose.foundation.BorderStroke
+import com.example.evspot.navigation.Screen
+
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,7 +10,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,46 +21,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.evspot.data.PlacesRepository
-import com.example.evspot.model.*
-import com.example.evspot.navigation.Screen
+import com.example.evspot.model.ChargingSpot
+import com.example.evspot.model.MapConfig
+import com.example.evspot.model.ChargerStation
+import com.example.evspot.model.ChargingSlot
+import com.example.evspot.model.sampleStations
 import com.example.evspot.ui.components.ChargingMap
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
 import kotlin.math.*
-
-enum class NearbyFilter(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    RECOMMENDED("Recommended", Icons.Default.Star),
-    NEAREST("Nearest", Icons.Default.Place),
-    CHEAPEST("Cheapest", Icons.Default.CurrencyRupee),
-    FASTEST("Fastest", Icons.Default.Bolt),
-    RATING("Rating", Icons.Default.ThumbUp)
-}
-
-fun calculateEvSpotScore(
-    distanceKm: Double,
-    rating: Double?,
-    userRatingsTotal: Int?,
-    priceLevel: Int?
-): Double {
-    val wDistance = 0.40
-    val wPrice = 0.25
-    val wRating = 0.15
-    val wReliability = 0.10
-    val wSuitability = 0.10
-
-    val maxDistance = 5.0 // km
-    val maxPrice = 4.0
-    val maxRating = 5.0
-    val targetRatings = 100.0
-
-    val distanceScore = (1.0 - min(1.0, distanceKm / maxDistance)) * wDistance
-    val priceScore = (1.0 - ((priceLevel ?: 2).toDouble() / maxPrice)) * wPrice
-    val ratingScore = ((rating ?: 3.0) / maxRating) * wRating
-    val reliabilityScore = (min(1.0, (userRatingsTotal ?: 0).toDouble() / targetRatings)) * wReliability
-    val suitabilityScore = 0.5 * wSuitability // Neutral suitability for now
-
-    return distanceScore + priceScore + ratingScore + reliabilityScore + suitabilityScore
-}
 
 fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val r = 6371 // Radius of the earth
@@ -86,7 +54,6 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     var searchCenter by remember { mutableStateOf<LatLng?>(null) }
     var chargingSpots by remember { mutableStateOf<List<ChargingSpot>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
-    var selectedFilter by remember { mutableStateOf(NearbyFilter.RECOMMENDED) }
 
     val activeSearchCenter = searchCenter ?: deviceLocation ?: MapConfig.DEFAULT_LOCATION
 
@@ -100,56 +67,35 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     }
 
     // Convert ChargingSpot to ChargerStation for the list UI
-    val chargerStations = remember(chargingSpots, deviceLocation, selectedFilter, activeSearchCenter) {
+    val chargerStations = remember(chargingSpots, deviceLocation) {
         val list = chargingSpots.map { spot ->
-            val distance = calculateDistance(
-                activeSearchCenter.latitude, activeSearchCenter.longitude,
-                spot.position.latitude, spot.position.longitude
-            )
+            val distance = deviceLocation?.let {
+                calculateDistance(it.latitude, it.longitude, spot.position.latitude, spot.position.longitude)
+            } ?: 0.0
             
-            val score = calculateEvSpotScore(
-                distanceKm = distance,
-                rating = spot.rating,
-                userRatingsTotal = spot.userRatingsTotal,
-                priceLevel = spot.priceLevel
-            )
-
             ChargerStation(
-                id = spot.id,
                 name = spot.name,
                 type = "EV Charging",
                 location = spot.address,
                 distanceKm = (distance * 10).toInt() / 10.0,
                 etaMin = (distance * 2).toInt(),
-                pricePerKwh = if (spot.priceLevel != null) 15 + spot.priceLevel * 2 else null,
-                rating = spot.rating ?: 0.0,
-                reviewCount = spot.userRatingsTotal ?: 0,
-                maxSpeedKw = null, // Not available from Places API
+                pricePerKwh = 15,
+                rating = 4.5,
+                reviewCount = 50,
+                maxSpeedKw = 50,
                 connectors = "CCS2",
                 hours = "24/7",
-                availability = "Available",
-                evSpotScore = score
+                availability = "Available"
             )
         }
         
-        val sortedList = when (selectedFilter) {
-            NearbyFilter.RECOMMENDED -> list.sortedByDescending { it.evSpotScore }
-            NearbyFilter.NEAREST -> list.sortedBy { it.distanceKm }
-            NearbyFilter.CHEAPEST -> list.sortedBy { it.pricePerKwh ?: Int.MAX_VALUE }
-            NearbyFilter.FASTEST -> list.sortedByDescending { it.maxSpeedKw ?: 0 }
-            NearbyFilter.RATING -> list.sortedByDescending { it.rating }
-        }
-
         // If no nearby real stations, show sample stations as fallback for demo
-        if (sortedList.isEmpty() && !isLoading) {
+        if (list.isEmpty() && !isLoading) {
             sampleStations
         } else {
-            sortedList
+            list.sortedBy { it.distanceKm }
         }
     }
-
-    val recommendedSpotId = chargerStations.firstOrNull()?.id
-    val recommendedSpot = chargingSpots.find { it.id == recommendedSpotId }
 
     Scaffold(
         topBar = {
@@ -157,7 +103,7 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 title = { Text("Nearby Charging Stations", color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -182,7 +128,6 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     searchCenter = activeSearchCenter,
                     chargingSpots = chargingSpots,
-                    recommendedSpot = recommendedSpot,
                     onDeviceLocationChanged = { loc ->
                         if (deviceLocation == null) {
                             deviceLocation = loc
@@ -201,45 +146,11 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 }
             }
 
-            // Filter UI
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                NearbyFilter.entries.forEach { filter ->
-                    FilterChip(
-                        selected = selectedFilter == filter,
-                        onClick = { selectedFilter = filter },
-                        label = { Text(filter.label) },
-                        leadingIcon = {
-                            Icon(
-                                filter.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        shape = RoundedCornerShape(20.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = Color(0xFFE8F5E9).copy(alpha = 0.5f),
-                            labelColor = Color(0xFF2E7D32),
-                            iconColor = Color(0xFF2E7D32),
-                            selectedContainerColor = Color(0xFF2E7D32),
-                            selectedLabelColor = Color.White,
-                            selectedLeadingIconColor = Color.White
-                        ),
-                        border = null
-                    )
-                }
-            }
-
             // List content below map
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Column {
@@ -253,12 +164,8 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                         Text("No charging stations found in this area.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
-                    chargerStations.forEachIndexed { index, station ->
-                        StationCard(
-                            station = station, 
-                            onClick = { onNavigate(Screen.StationDetail.createRoute(station.name)) },
-                            isHighlighted = index == 0 // Highlight the top recommendation
-                        )
+                    chargerStations.forEach { station ->
+                        StationCard(station, onClick = { onNavigate(Screen.StationDetail.createRoute(station.name)) })
                     }
                 }
                 
@@ -307,14 +214,11 @@ fun NearbyStationsSheetContent(
 }
 
 @Composable
-fun StationCard(station: ChargerStation, onClick: () -> Unit, isHighlighted: Boolean = false) {
+fun StationCard(station: ChargerStation, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isHighlighted) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surface
-        ),
-        border = if (isHighlighted) BorderStroke(1.dp, Color(0xFF2E7D32)) else null
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -360,7 +264,7 @@ fun StationCard(station: ChargerStation, onClick: () -> Unit, isHighlighted: Boo
                         )
                     }
                     Text(
-                        if (station.pricePerKwh != null) "₹${station.pricePerKwh}/kWh" else "Price N/A",
+                        "₹${station.pricePerKwh}/kWh",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
@@ -380,7 +284,7 @@ fun StationCard(station: ChargerStation, onClick: () -> Unit, isHighlighted: Boo
             ) {
                 Row(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text(
-                        if (station.maxSpeedKw != null) "${station.maxSpeedKw} kW  " else "Power N/A  ",
+                        "${station.maxSpeedKw} kW  ",
                         fontSize = 12.sp,
                         modifier = Modifier.alignByBaseline(),
                         color = MaterialTheme.colorScheme.onSurface

@@ -13,7 +13,6 @@ import com.example.evspot.model.sampleSessions
 import com.example.evspot.model.sampleNotifications
 
 import com.example.evspot.model.NotificationItem
-import com.example.evspot.model.sampleNotifications
 
 class UserViewModel : ViewModel() {
     private val _notifications = mutableStateListOf<NotificationItem>().apply {
@@ -22,7 +21,7 @@ class UserViewModel : ViewModel() {
     val notifications: List<NotificationItem> = _notifications
 
     private val _bookings = mutableStateListOf<Booking>().apply {
-        addAll(com.example.evspot.model.sampleBookings)
+        addAll(sampleBookings)
     }
     val bookings: List<Booking> = _bookings
 

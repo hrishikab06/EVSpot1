@@ -28,11 +28,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evspot.data.api.RangePredictionRequest
 import com.example.evspot.data.api.RetrofitClient
-import com.example.evspot.model.VehicleConfig
+import com.example.evspot.ui.screens.VehicleViewModel
 import com.example.evspot.ui.theme.*
-import retrofit2.Response
 import java.util.Locale
 
 data class Vehicle(
@@ -53,9 +53,9 @@ val mockVehicle = Vehicle(
     name = "VoltWay EV-01",
     model = "Tata Nexon EV Max",
     registration = "MH01AB1234",
-    battery = VehicleConfig.SOC,
+    battery = 72,
     range = 246,
-    temperature = VehicleConfig.BATTERY_TEMP,
+    temperature = 31,
     batteryHealth = 96,
     charging = false,
     odometer = 12458,
@@ -64,27 +64,43 @@ val mockVehicle = Vehicle(
 )
 
 @Composable
-fun VehicleDashboard(modifier: Modifier = Modifier) {
+fun VehicleDashboard(
+    modifier: Modifier = Modifier,
+    viewModel: VehicleViewModel = viewModel()
+) {
+    val bmsStatus by viewModel.bmsStatus.collectAsState()
+    
+    // Deterministic live vehicle data from central simulation
+    val currentVehicle = bmsStatus?.let { status ->
+        mockVehicle.copy(
+            battery = status.soc.toInt(),
+            range = status.remainingRange.toInt(),
+            temperature = status.batteryTemp.toInt(),
+            averageSpeed = status.speed.toInt()
+        )
+    } ?: mockVehicle
+
     var predictedRange by remember { mutableStateOf<Double?>(null) }
     var isRangeLoading by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    // Re-predict range whenever BMS status changes (every 60 seconds)
+    LaunchedEffect(bmsStatus) {
+        val status = bmsStatus ?: return@LaunchedEffect
         isRangeLoading = true
         try {
             val request = RangePredictionRequest(
-                soc = VehicleConfig.SOC,
-                battery_temp = VehicleConfig.BATTERY_TEMP,
-                speed = VehicleConfig.SPEED,
-                ac_on = VehicleConfig.AC_ON,
-                distance_travelled = VehicleConfig.DISTANCE_TRAVELLED,
-                energy_consumed = VehicleConfig.ENERGY_CONSUMED
+                soc = status.soc.toInt(),
+                battery_temp = status.batteryTemp.toInt(),
+                speed = status.speed.toInt(),
+                ac_on = if (status.acOn) 1 else 0,
+                distance_travelled = status.distanceTravelled.toInt(),
+                energy_consumed = status.energyConsumed
             )
             val response = RetrofitClient.instance.predictRange(request)
             if (response.isSuccessful) {
                 predictedRange = response.body()?.predicted_range_km
             }
         } catch (e: Exception) {
-            // Handle error
             e.printStackTrace()
         } finally {
             isRangeLoading = false
@@ -107,14 +123,14 @@ fun VehicleDashboard(modifier: Modifier = Modifier) {
             item { TitleRow() }
             item { 
                 VehicleHeroCard(
-                    vehicle = mockVehicle,
+                    vehicle = currentVehicle,
                     predictedRange = predictedRange,
                     isRangeLoading = isRangeLoading
                 ) 
             }
-            item { ChargingStatusCard(mockVehicle.charging) }
-            item { VehicleHealthSection(mockVehicle) }
-            item { OdometerEfficiencyCard(mockVehicle) }
+            item { ChargingStatusCard(currentVehicle.charging) }
+            item { VehicleHealthSection(currentVehicle) }
+            item { OdometerEfficiencyCard(currentVehicle) }
             item { QuickActionsSection() }
         }
     }

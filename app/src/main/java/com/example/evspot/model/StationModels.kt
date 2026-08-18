@@ -41,10 +41,10 @@ val sampleStations = listOf(
         hours = "24/7",
         availability = "2/4 Available",
         slots = listOf(
-            ChargingSlot(1, true, "CCS2 - 120kW", "Ready to charge"),
-            ChargingSlot(2, false, "CCS2 - 120kW", "Occupied (ETA 15 min)"),
-            ChargingSlot(3, true, "CHAdeMO - 50kW", "Ready to charge"),
-            ChargingSlot(4, false, "CCS2 - 120kW", "Occupied (ETA 40 min)")
+            ChargingSlot(1, isAvailable = true, "CCS2 - 120kW", "Ready to charge"),
+            ChargingSlot(2, isAvailable = false, "CCS2 - 120kW", "Occupied (ETA 15 min)"),
+            ChargingSlot(3, isAvailable = true, "CHAdeMO - 50kW", "Ready to charge"),
+            ChargingSlot(4, isAvailable = false, "CCS2 - 120kW", "Occupied (ETA 40 min)")
         )
     ),
     ChargerStation(
@@ -61,8 +61,8 @@ val sampleStations = listOf(
         hours = "24/7",
         availability = "1/2 Available",
         slots = listOf(
-            ChargingSlot(1, true, "CCS2 - 50kW", "Ready to charge"),
-            ChargingSlot(2, false, "Type 2 - 22kW", "Occupied (ETA 10 min)")
+            ChargingSlot(1, isAvailable = true, "CCS2 - 50kW", "Ready to charge"),
+            ChargingSlot(2, isAvailable = false, "Type 2 - 22kW", "Occupied (ETA 10 min)")
         )
     ),
     ChargerStation(
@@ -79,9 +79,9 @@ val sampleStations = listOf(
         hours = "24/7",
         availability = "3/3 Available",
         slots = listOf(
-            ChargingSlot(1, true, "CCS2 - 150kW", "Ready to charge"),
-            ChargingSlot(2, true, "CCS2 - 150kW", "Ready to charge"),
-            ChargingSlot(3, true, "CCS2 - 150kW", "Ready to charge")
+            ChargingSlot(1, isAvailable = true, "CCS2 - 150kW", "Ready to charge"),
+            ChargingSlot(2, isAvailable = true, "CCS2 - 150kW", "Ready to charge"),
+            ChargingSlot(3, isAvailable = true, "CCS2 - 150kW", "Ready to charge")
         )
     )
 )

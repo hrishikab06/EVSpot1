@@ -29,13 +29,13 @@ import kotlinx.coroutines.launch
 fun MapScreen(
     modifier: Modifier = Modifier,
     chargingSpots: List<ChargingSpot> = emptyList(),
-    recommendedSpot: ChargingSpot? = null,
     liteModeEnabled: Boolean = false,
     vehicleLocation: LatLng? = null,
     destinationLocation: LatLng? = null,
     routePoints: List<LatLng> = emptyList(),
     searchCenter: LatLng? = null,
     searchRadius: Double = MapConfig.searchRadius.toDouble(),
+    recommendedSpot: ChargingSpot? = null,
     onMapClick: ((LatLng) -> Unit)? = null,
     onDeviceLocationChanged: ((LatLng) -> Unit)? = null,
     cameraPositionState: CameraPositionState = rememberCameraPositionState {
@@ -178,34 +178,27 @@ fun MapScreen(
             Marker(
                 state = MarkerState(position = it),
                 title = "Search Center",
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
             )
         }
 
         chargingSpots.forEach { spot ->
-            val isRecommended = recommendedSpot?.id == spot.id
             Marker(
                 state = MarkerState(position = spot.position),
-                title = spot.name + (if (isRecommended) " (Recommended)" else ""),
+                title = spot.name,
                 snippet = spot.address,
-                icon = BitmapDescriptorFactory.defaultMarker(
-                    if (isRecommended) BitmapDescriptorFactory.HUE_AZURE else BitmapDescriptorFactory.HUE_ORANGE
-                ),
-                zIndex = if (isRecommended) 1f else 0f
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
             )
         }
 
-        // If recommended spot is not in the list (e.g. searched differently), show it anyway
+        // Recommended Spot Marker
         recommendedSpot?.let { spot ->
-            if (chargingSpots.none { it.id == spot.id }) {
-                Marker(
-                    state = MarkerState(position = spot.position),
-                    title = spot.name + " (Recommended)",
-                    snippet = spot.address,
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
-                    zIndex = 1f
-                )
-            }
+            Marker(
+                state = MarkerState(position = spot.position),
+                title = "Recommended: ${spot.name}",
+                snippet = spot.address,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)
+            )
         }
     }
 }
