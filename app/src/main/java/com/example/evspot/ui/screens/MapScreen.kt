@@ -178,7 +178,7 @@ fun MapScreen(
             Marker(
                 state = MarkerState(position = it),
                 title = "Search Center",
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
             )
         }
 
@@ -189,7 +189,7 @@ fun MapScreen(
                 title = spot.name + (if (isRecommended) " (Recommended)" else ""),
                 snippet = spot.address,
                 icon = BitmapDescriptorFactory.defaultMarker(
-                    if (isRecommended) BitmapDescriptorFactory.HUE_GREEN else BitmapDescriptorFactory.HUE_ORANGE
+                    if (isRecommended) BitmapDescriptorFactory.HUE_AZURE else BitmapDescriptorFactory.HUE_ORANGE
                 ),
                 zIndex = if (isRecommended) 1f else 0f
             )
@@ -202,7 +202,7 @@ fun MapScreen(
                     state = MarkerState(position = spot.position),
                     title = spot.name + " (Recommended)",
                     snippet = spot.address,
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
                     zIndex = 1f
                 )
             }

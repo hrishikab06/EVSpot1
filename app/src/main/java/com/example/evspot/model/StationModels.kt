@@ -8,20 +8,22 @@ data class ChargingSlot(
 )
 
 data class ChargerStation(
+    val id: String = "",
     val name: String,
     val type: String,
     val location: String,
     val distanceKm: Double,
     val etaMin: Int,
-    val pricePerKwh: Int,
+    val pricePerKwh: Int? = null,
     val rating: Double,
     val reviewCount: Int,
-    val maxSpeedKw: Int,
+    val maxSpeedKw: Int? = null,
     val connectors: String,
     val hours: String,
     val availability: String,
     val isFull: Boolean = false,
-    val slots: List<ChargingSlot> = emptyList()
+    val slots: List<ChargingSlot> = emptyList(),
+    val evSpotScore: Double = 0.0
 )
 
 val sampleStations = listOf(
