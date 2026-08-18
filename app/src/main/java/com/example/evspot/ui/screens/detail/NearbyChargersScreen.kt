@@ -6,9 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -97,7 +95,10 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
         }
     }
 
-    Scaffold(
+    val scaffoldState = rememberBottomSheetScaffoldState()
+
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
                 title = { Text("Nearby Charging Stations", color = MaterialTheme.colorScheme.onSurface) },
@@ -110,66 +111,52 @@ fun NearbyChargersScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
+        },
+        sheetPeekHeight = 300.dp, // Increased peek height to show list below map
+        sheetContainerColor = MaterialTheme.colorScheme.surface,
+        sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        sheetShadowElevation = 16.dp,
+        sheetDragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = Color.LightGray.copy(alpha = 0.5f)
+            )
+        },
+        sheetContent = {
+            NearbyStationsSheetContent(
+                stations = chargerStations,
+                isLoading = isLoading,
+                onStationClick = { station ->
+                    onNavigate(Screen.StationDetail.createRoute(station.name))
+                }
+            )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
         ) {
-            // Map at the top
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(350.dp)
-            ) {
-                ChargingMap(
-                    modifier = Modifier.fillMaxSize(),
-                    searchCenter = activeSearchCenter,
-                    chargingSpots = chargingSpots,
-                    onDeviceLocationChanged = { loc ->
-                        if (deviceLocation == null) {
-                            deviceLocation = loc
-                        }
-                    },
-                    onMapClick = { loc ->
-                        searchCenter = loc
+            // Full screen map as background
+            ChargingMap(
+                modifier = Modifier.fillMaxSize(),
+                bottomPadding = 300.dp,
+                searchCenter = activeSearchCenter,
+                chargingSpots = chargingSpots,
+                onDeviceLocationChanged = { loc ->
+                    if (deviceLocation == null) {
+                        deviceLocation = loc
                     }
+                },
+                onMapClick = { loc ->
+                    searchCenter = loc
+                }
+            )
+
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color(0xFF2E7D32)
                 )
-                
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Color(0xFF2E7D32)
-                    )
-                }
-            }
-
-            // List content below map
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Column {
-                    Text("Nearby Stations", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
-                    val radiusKm = MapConfig.searchRadius / 1000
-                    Text("Within $radiusKm km radius", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-
-                if (chargerStations.isEmpty() && !isLoading) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("No charging stations found in this area.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                } else {
-                    chargerStations.forEach { station ->
-                        StationCard(station, onClick = { onNavigate(Screen.StationDetail.createRoute(station.name)) })
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

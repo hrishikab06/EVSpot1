@@ -214,7 +214,7 @@ fun DashboardSheetContent(
                     title = "Plan a Trip",
                     subtitle = "Plan your journey with charging stops",
                     icon = Icons.Default.Route,
-                    containerColor = Color(0xFF004D40),
+                    containerColor = Color(0xFF004D43),
                     contentColor = Color.White,
                     onClick = { onNavigate(Screen.TripPlanner.route) },
                     modifier = Modifier.weight(1f)
@@ -280,12 +280,7 @@ fun QuickAccessSection(onNavigate: (String) -> Unit) {
                 onClick = { onNavigate(Screen.PastTrips.route) },
                 modifier = Modifier.weight(1f)
             )
-            QuickAccessCard(
-                title = "Wallet",
-                icon = Icons.Default.AccountBalanceWallet,
-                onClick = { onNavigate(Screen.Wallet.route) },
-                modifier = Modifier.weight(1f)
-            )
+
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             QuickAccessCard(
