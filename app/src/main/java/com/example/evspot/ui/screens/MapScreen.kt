@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 fun MapScreen(
     modifier: Modifier = Modifier,
     chargingSpots: List<ChargingSpot> = emptyList(),
+    recommendedSpot: ChargingSpot? = null,
     liteModeEnabled: Boolean = false,
     vehicleLocation: LatLng? = null,
     destinationLocation: LatLng? = null,
@@ -182,12 +183,29 @@ fun MapScreen(
         }
 
         chargingSpots.forEach { spot ->
+            val isRecommended = recommendedSpot?.id == spot.id
             Marker(
                 state = MarkerState(position = spot.position),
-                title = spot.name,
+                title = spot.name + (if (isRecommended) " (Recommended)" else ""),
                 snippet = spot.address,
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                icon = BitmapDescriptorFactory.defaultMarker(
+                    if (isRecommended) BitmapDescriptorFactory.HUE_GREEN else BitmapDescriptorFactory.HUE_ORANGE
+                ),
+                zIndex = if (isRecommended) 1f else 0f
             )
+        }
+
+        // If recommended spot is not in the list (e.g. searched differently), show it anyway
+        recommendedSpot?.let { spot ->
+            if (chargingSpots.none { it.id == spot.id }) {
+                Marker(
+                    state = MarkerState(position = spot.position),
+                    title = spot.name + " (Recommended)",
+                    snippet = spot.address,
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
+                    zIndex = 1f
+                )
+            }
         }
     }
 }

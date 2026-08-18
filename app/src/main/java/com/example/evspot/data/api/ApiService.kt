@@ -53,4 +53,46 @@ interface ApiService {
 
     @POST("predict-range")
     suspend fun predictRange(@Body request: RangePredictionRequest): Response<RangePredictionResponse>
+
+    @POST("plan-trip")
+    suspend fun planTrip(@Body request: PlanTripRequest): Response<PlanTripResponse>
 }
+
+data class PlanTripRequest(
+    val current_lat: Double,
+    val current_lng: Double,
+    val destination_lat: Double,
+    val destination_lng: Double,
+    val current_soc: Double,
+    val battery_temp: Double,
+    val battery_capacity_kwh: Double,
+    val candidate_stations: List<CandidateStation>
+)
+
+data class CandidateStation(
+    val id: String,
+    val name: String,
+    val address: String,
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class PlanTripResponse(
+    val total_distance_km: Double,
+    val drive_time_minutes: Double,
+    val recommended_station: CandidateStation?,
+    val arrival_soc_percent: Double,
+    val target_soc_percent: Double,
+    val charging_time_minutes: Double,
+    val charging_cost_inr: Double,
+    val total_trip_time_minutes: Double,
+    val route_plan: List<RoutePlanStep>
+)
+
+data class RoutePlanStep(
+    val type: String,
+    val name: String,
+    val distance_km: Double? = null,
+    val drive_time_minutes: Double? = null,
+    val charging_time_minutes: Double? = null
+)
