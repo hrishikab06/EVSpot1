@@ -6,5 +6,8 @@ data class ChargingSpot(
     val id: String,
     val name: String,
     val position: LatLng,
-    val address: String
+    val address: String,
+    val rating: Double? = null,
+    val userRatingsTotal: Int? = null,
+    val priceLevel: Int? = null
 )

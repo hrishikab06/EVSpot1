@@ -1,32 +1,48 @@
-# Home Page UI & Interaction Corrections
+# Implementation Plan - Nearby Charging Recommendation Algorithm
 
-This plan addresses the UI polish of the search bar, its visibility during map expansion, and removes duplicate/unwanted map visual elements.
+This plan implements a deterministic scoring and ranking algorithm for the Nearby Charging Stations feature, including user-selectable filters and map highlights for recommended stations.
+
+## User Review Required
+
+> [!IMPORTANT]
+> Google Places API (New) has limited support for EV-specific data like charging speed or per-kWh cost. The algorithm will prioritize available metrics (Distance, Rating, Price Level) and handle missing fields gracefully without inventing fake data.
 
 ## Proposed Changes
+
+### Data Models
+
+#### [MODIFY] [ChargingSpot.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/model/ChargingSpot.kt)
+*   Add `rating: Double?`, `userRatingsTotal: Int?`, and `priceLevel: Int?` to the data class.
+
+### Repositories
+
+#### [MODIFY] [PlacesRepository.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/data/PlacesRepository.kt)
+*   Update `searchChargingStations` and `searchAlongRoute` to request `RATING`, `USER_RATING_COUNT`, and `PRICE_LEVEL` fields from the Places SDK.
+*   Populate the new fields in the `ChargingSpot` objects.
 
 ### UI Components
 
 #### [MODIFY] [MapScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/MapScreen.kt)
-*   **Zoom Controls**: Explicitly set `zoomControlsEnabled = false` in `MapUiSettings` to remove the default Google Maps buttons, leaving only the EVSpot custom ones.
-*   **Radius Circle**: Adjust logic to render the `Circle` **only** when `searchCenter` is not null. This removes the range circle from the current location on initial load.
+*   Add `highlightedSpotId: String?` parameter.
+*   Update marker rendering logic: if a spot matches the `highlightedSpotId`, set its marker color to Azure (Blue).
 
-#### [MODIFY] [HomeScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/HomeScreen.kt)
-*   **Visibility Logic**: Observe `scaffoldState.bottomSheetState` and hide the top bar/search bar when the bottom sheet is expanded.
-*   **Modern Search Bar**:
-    *   Update the search field within `FloatingTopBar` to use a modern pill-shaped design (`RoundedCornerShape(28.dp)`).
-    *   Improve padding, typography, and background consistency with EVSpot's visual style.
-    *   Ensure the transition (hiding/showing) is smooth.
+#### [MODIFY] [ChargingMap.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/components/ChargingMap.kt)
+*   Add `highlightedSpotId: String?` and pass it down to `MapScreen`.
+
+#### [MODIFY] [NearbyChargersScreen.kt](file:///C:/Users/deepika/StudioProjects/EVSpot1/app/src/main/java/com/example/evspot/ui/screens/detail/NearbyChargersScreen.kt)
+*   **Ranking Logic**: Implement `calculateEvSpotScore` based on Distance (40%), Cost/PriceLevel (25%), Rating (15%), etc.
+*   **Filter UI**: Add a horizontal scrollable row of compact filter chips (Recommended, Nearest, Cheapest, Fastest, Rating) with Material icons.
+*   **State Management**: Track the selected filter and re-rank the `chargerStations` list immediately.
+*   **Map Integration**: Identify the top-ranked station for the selected filter and pass its ID as the `highlightedSpotId` to the map.
 
 ## Verification Plan
 
 ### Automated Tests
-*   Run `gradlew :app:assembleDebug` to verify the build.
+*   Run `gradlew :app:assembleDebug` to ensure the project builds successfully.
 
 ### Manual Verification
-1.  **Search Bar Style**: Verify the new search bar looks modern and matches the EVSpot UI.
-2.  **Expansion Behavior**: Drag the bottom panel up. Verify the search bar disappears smoothly.
-3.  **Zoom Controls**: Verify only one set of zoom buttons is visible on the map.
-4.  **Radius Circle**:
-    *   Verify NO circle is visible around the current location initially.
-    *   Search for a place. Verify the 5 km circle appears ONLY around that searched point.
-5.  **Functionality**: Confirm search, current location, and markers still work as expected.
+1.  **Filter Selection**: Open "Find Nearby" and tap different filters. Verify the list reorders instantly.
+2.  **Map Highlights**: Verify that only the top-ranked station for the active filter is colored BLUE on the map.
+3.  **Accuracy**: Verify "Nearest" actually puts the closest station at the top.
+4.  **Graceful Handling**: Ensure stations with missing ratings or price levels are still rankable and don't cause crashes.
+5.  **Isolation**: Confirm that "Plan a Trip" and other screens remain unchanged.
