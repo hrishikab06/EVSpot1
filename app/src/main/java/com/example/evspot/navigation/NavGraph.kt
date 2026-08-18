@@ -1,18 +1,30 @@
 package com.example.evspot.navigation
-import com.example.evspot.ui.screens.detail.PlanTripScreen
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.evspot.ui.screens.*
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import androidx.lifecycle.viewmodel.compose.viewModel
+
+import com.example.evspot.ui.screens.detail.ChargingHistoryScreen
+import com.example.evspot.ui.screens.UpcomingBookingsScreen
 import com.example.evspot.ui.screens.auth.*
-import com.example.evspot.ui.screens.detail.*
+import com.example.evspot.ui.screens.detail.PlanTripScreen
+import com.example.evspot.ui.screens.detail.AccountScreen
+import com.example.evspot.ui.screens.detail.NearbyChargersScreen
+import com.example.evspot.ui.screens.detail.StationDetailScreen
+import com.example.evspot.ui.screens.detail.WalletScreen
+import com.example.evspot.ui.screens.detail.EnergyUsageScreen
+import com.example.evspot.ui.screens.detail.VehicleHealthScreen
+import com.example.evspot.ui.screens.detail.PastTripsScreen
+import com.example.evspot.ui.screens.AddVehicleScreen
+import com.example.evspot.ui.screens.MainDashboardScreen
+import com.example.evspot.ui.screens.NotificationScreen
+import com.example.evspot.ui.screens.SplashScreen
 import com.example.evspot.ui.screens.VehicleViewModel
 import com.example.evspot.ui.UserViewModel
 import com.example.evspot.ui.ThemeViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.navArgument
-import androidx.navigation.NavType
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -21,14 +33,14 @@ fun AppNavGraph(navController: NavHostController) {
     val themeViewModel: ThemeViewModel = viewModel()
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash.route,
+        startDestination = Screen.Splash.route
     ) {
         composable(Screen.Splash.route) {
-            SplashScreen {
+            SplashScreen(onNavigateToNext = {
                 navController.navigate(Screen.Login.route) {
                     popUpTo(Screen.Splash.route) { inclusive = true }
                 }
-            }
+            })
         }
         composable(Screen.Account.route) {
             AccountScreen(
@@ -46,7 +58,8 @@ fun AppNavGraph(navController: NavHostController) {
 
         composable(Screen.Login.route) {
             LoginScreen(
-                onLoginSuccess = {
+                onLoginSuccess = { userId, email, name ->
+                    userViewModel.setUserSession(userId, email, name)
                     navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -97,10 +110,14 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.StationDetail.route,
-            arguments = listOf(navArgument("stationName") { type = NavType.StringType })
+            arguments = listOf(navArgument("stationId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val stationName = backStackEntry.arguments?.getString("stationName") ?: ""
-            StationDetailScreen(stationName = stationName, onBack = { navController.popBackStack() })
+            val stationId = backStackEntry.arguments?.getInt("stationId") ?: -1
+            StationDetailScreen(
+                stationId = stationId, 
+                onBack = { navController.popBackStack() },
+                userViewModel = userViewModel
+            )
         }
         composable(Screen.NearbyChargers.route) {
             NearbyChargersScreen(
