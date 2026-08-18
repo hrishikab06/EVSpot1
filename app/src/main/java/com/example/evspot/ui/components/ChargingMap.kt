@@ -42,6 +42,7 @@ fun ChargingMap(
     searchCenter: LatLng? = null,
     searchRadius: Double = MapConfig.searchRadius.toDouble(),
     chargingSpots: List<ChargingSpot> = emptyList(),
+    recommendedSpot: ChargingSpot? = null,
     onMapClick: ((LatLng) -> Unit)? = null,
     onDeviceLocationChanged: ((LatLng) -> Unit)? = null
 ) {
@@ -84,6 +85,7 @@ fun ChargingMap(
                 searchCenter = searchCenter,
                 searchRadius = searchRadius,
                 chargingSpots = chargingSpots,
+                recommendedSpot = recommendedSpot,
                 onMapClick = onMapClick,
                 onDeviceLocationChanged = onDeviceLocationChanged
             )

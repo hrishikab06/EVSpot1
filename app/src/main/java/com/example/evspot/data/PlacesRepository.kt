@@ -53,7 +53,10 @@ class PlacesRepository(context: Context) {
             Place.Field.ID,
             Place.Field.DISPLAY_NAME,
             Place.Field.LOCATION,
-            Place.Field.FORMATTED_ADDRESS
+            Place.Field.FORMATTED_ADDRESS,
+            Place.Field.RATING,
+            Place.Field.USER_RATING_COUNT,
+            Place.Field.PRICE_LEVEL
         )
 
         val circle = CircularBounds.newInstance(center, radiusMeters)
@@ -70,7 +73,10 @@ class PlacesRepository(context: Context) {
                     id = place.id ?: "",
                     name = place.displayName ?: "Charging Station",
                     position = place.location ?: center,
-                    address = place.formattedAddress ?: "Unknown location"
+                    address = place.formattedAddress ?: "Unknown location",
+                    rating = place.rating,
+                    userRatingsTotal = place.userRatingCount,
+                    priceLevel = place.priceLevel
                 )
             }
             Log.d(tag, "Found ${spots.size} stations")

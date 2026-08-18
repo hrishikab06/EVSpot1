@@ -12,7 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +28,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.evspot.data.api.RangePredictionRequest
+import com.example.evspot.data.api.RetrofitClient
+import com.example.evspot.model.VehicleConfig
 import com.example.evspot.ui.theme.*
+import retrofit2.Response
 import java.util.Locale
 
 data class Vehicle(
@@ -49,9 +53,9 @@ val mockVehicle = Vehicle(
     name = "VoltWay EV-01",
     model = "Tata Nexon EV Max",
     registration = "MH01AB1234",
-    battery = 72,
+    battery = VehicleConfig.SOC,
     range = 246,
-    temperature = 31,
+    temperature = VehicleConfig.BATTERY_TEMP,
     batteryHealth = 96,
     charging = false,
     odometer = 12458,
@@ -61,6 +65,32 @@ val mockVehicle = Vehicle(
 
 @Composable
 fun VehicleDashboard(modifier: Modifier = Modifier) {
+    var predictedRange by remember { mutableStateOf<Double?>(null) }
+    var isRangeLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isRangeLoading = true
+        try {
+            val request = RangePredictionRequest(
+                soc = VehicleConfig.SOC,
+                battery_temp = VehicleConfig.BATTERY_TEMP,
+                speed = VehicleConfig.SPEED,
+                ac_on = VehicleConfig.AC_ON,
+                distance_travelled = VehicleConfig.DISTANCE_TRAVELLED,
+                energy_consumed = VehicleConfig.ENERGY_CONSUMED
+            )
+            val response = RetrofitClient.instance.predictRange(request)
+            if (response.isSuccessful) {
+                predictedRange = response.body()?.predicted_range_km
+            }
+        } catch (e: Exception) {
+            // Handle error
+            e.printStackTrace()
+        } finally {
+            isRangeLoading = false
+        }
+    }
+
     Scaffold(
         bottomBar = { BottomNavigationBar() },
         containerColor = BackgroundGray
@@ -75,7 +105,13 @@ fun VehicleDashboard(modifier: Modifier = Modifier) {
         ) {
             item { VehicleHeader() }
             item { TitleRow() }
-            item { VehicleHeroCard(mockVehicle) }
+            item { 
+                VehicleHeroCard(
+                    vehicle = mockVehicle,
+                    predictedRange = predictedRange,
+                    isRangeLoading = isRangeLoading
+                ) 
+            }
             item { ChargingStatusCard(mockVehicle.charging) }
             item { VehicleHealthSection(mockVehicle) }
             item { OdometerEfficiencyCard(mockVehicle) }
@@ -192,7 +228,11 @@ fun TitleRow() {
 }
 
 @Composable
-fun VehicleHeroCard(vehicle: Vehicle) {
+fun VehicleHeroCard(
+    vehicle: Vehicle,
+    predictedRange: Double? = null,
+    isRangeLoading: Boolean = false
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(24.dp),
@@ -277,12 +317,20 @@ fun VehicleHeroCard(vehicle: Vehicle) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = vehicle.range.toString(),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkNavy
-                        )
+                        if (isRangeLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp).padding(4.dp),
+                                strokeWidth = 2.dp,
+                                color = VoltGreen
+                            )
+                        } else {
+                            Text(
+                                text = predictedRange?.let { String.format(Locale.getDefault(), "%.0f", it) } ?: vehicle.range.toString(),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DarkNavy
+                            )
+                        }
                         Text(
                             text = " km",
                             fontSize = 14.sp,

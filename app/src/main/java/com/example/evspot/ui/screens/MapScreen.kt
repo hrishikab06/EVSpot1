@@ -117,7 +117,7 @@ fun MapScreen(
                     context.mainLooper
                 )
             } catch (e: SecurityException) {
-                e.printStackTrace()
+                // Permission not granted
             }
         }
     }
@@ -187,15 +187,6 @@ fun MapScreen(
                 title = spot.name,
                 snippet = spot.address,
                 icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
-            )
-        }
-
-        // Destination Marker
-        destinationLocation?.let {
-            Marker(
-                state = MarkerState(position = it),
-                title = "Destination",
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
             )
         }
     }
