@@ -50,7 +50,7 @@ fun StationDetailScreen(stationId: Int, onBack: () -> Unit, userViewModel: UserV
     val displayFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
     val now = Calendar.getInstance(TimeZone.getTimeZone("GMT+05:30"))
-    val startCal = (now.clone() as Calendar).apply { add(Calendar.MINUTE, 5) }
+    val startCal = now.clone() as Calendar 
     val endCal = (startCal.clone() as Calendar).apply { add(Calendar.HOUR, 1) }
 
     LaunchedEffect(stationId) {
