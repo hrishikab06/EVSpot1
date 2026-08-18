@@ -197,7 +197,7 @@ fun MapScreen(
                 state = MarkerState(position = spot.position),
                 title = "Recommended: ${spot.name}",
                 snippet = spot.address,
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
             )
         }
     }
