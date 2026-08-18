@@ -8,8 +8,8 @@ import com.example.evspot.data.BatteryRepository
 import com.example.evspot.data.model.BatteryStatus
 import com.example.evspot.data.model.VehicleListing
 import com.example.evspot.data.model.sampleVehicles
+import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,40 +36,37 @@ class VehicleViewModel(application: Application) : AndroidViewModel(application)
             val allData = batteryRepository.loadBatteryData()
             if (allData.isEmpty()) return@launch
 
-            // Create a map of SOC integer to the best matching row
+            // Pre-process the dataset: map each integer SOC (0-100) to its closest row
             val socMap = mutableMapOf<Int, BatteryStatus>()
-            for (status in allData) {
-                val socInt = status.soc.roundToInt().coerceIn(0, 100)
-                val current = socMap[socInt]
-                if (current == null || 
-                    Math.abs(status.soc - socInt) < Math.abs(current.soc - socInt)) {
-                    socMap[socInt] = status
+            for (socInt in 0..100) {
+                val closestRow = allData.minByOrNull { abs(it.soc - socInt) }
+                if (closestRow != null) {
+                    // We copy the row but force the integer SOC for deterministic display
+                    socMap[socInt] = closestRow.copy(soc = socInt.toDouble())
                 }
             }
 
             var currentSoc = 100
             while (currentSoc >= 0) {
-                val status = socMap[currentSoc] ?: run {
-                    val closestSoc = socMap.keys.minByOrNull { Math.abs(it - currentSoc) }
-                    if (closestSoc != null) {
-                        socMap[closestSoc]?.copy(soc = currentSoc.toDouble())
-                    } else null
-                }
-                
-                status?.let {
-                    _bmsStatus.value = it
-                    // Update the primary vehicle in the list to reflect live data
+                val currentStatus = socMap[currentSoc]
+                if (currentStatus != null) {
+                    _bmsStatus.value = currentStatus
+                    
+                    // Update shared vehicle list to maintain consistency across the app
                     if (_vehicles.isNotEmpty()) {
-                        val primaryIndex = _vehicles.indexOfFirst { v -> v.isPrimary }.let { if (it == -1) 0 else it }
+                        val primaryIndex = _vehicles.indexOfFirst { it.isPrimary }.let { if (it == -1) 0 else it }
                         val primaryVehicle = _vehicles[primaryIndex]
                         _vehicles[primaryIndex] = primaryVehicle.copy(
-                            batteryPercentage = it.soc.toInt(),
-                            estRangeKm = it.remainingRange.toInt()
+                            batteryPercentage = currentSoc,
+                            estRangeKm = currentStatus.remainingRange.roundToInt()
                         )
                     }
                 }
+
+                // Progress every 60 seconds
+                delay(60000L)
                 
-                delay(1.minutes)
+                if (currentSoc == 0) break // Stay at 0% once reached
                 currentSoc--
             }
         }

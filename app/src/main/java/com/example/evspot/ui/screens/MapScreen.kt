@@ -35,6 +35,7 @@ fun MapScreen(
     routePoints: List<LatLng> = emptyList(),
     searchCenter: LatLng? = null,
     searchRadius: Double = MapConfig.searchRadius.toDouble(),
+    recommendedSpot: ChargingSpot? = null,
     onMapClick: ((LatLng) -> Unit)? = null,
     onDeviceLocationChanged: ((LatLng) -> Unit)? = null,
     cameraPositionState: CameraPositionState = rememberCameraPositionState {
@@ -187,6 +188,16 @@ fun MapScreen(
                 title = spot.name,
                 snippet = spot.address,
                 icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+            )
+        }
+
+        // Recommended Spot Marker
+        recommendedSpot?.let { spot ->
+            Marker(
+                state = MarkerState(position = spot.position),
+                title = "Recommended: ${spot.name}",
+                snippet = spot.address,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)
             )
         }
     }

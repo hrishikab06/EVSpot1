@@ -1,7 +1,6 @@
 package com.example.evspot.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,6 +36,8 @@ fun HomeScreen(
     vehicleViewModel: VehicleViewModel = viewModel()
 ) {
     val bmsStatus by vehicleViewModel.bmsStatus.collectAsState()
+    
+    // Live vehicle data derived from centralized BMS simulation
     val evList = bmsStatus?.let { status ->
         listOf(EVInfo("EVSpot EV-01", status.soc.toInt(), status.remainingRange.toInt(), temperature = status.batteryTemp.toInt()))
     } ?: listOf(EVInfo("EVSpot EV-01", 72, 246))
