@@ -861,8 +861,7 @@ fun BottomActionButtons() {
 }
 
 val sampleFilters = listOf(
-    TripFilter("Recommended", Icons.Default.AutoAwesome, isSelected = true),
-    TripFilter("Fastest", Icons.Default.Schedule)
+    TripFilter("Recommended", Icons.Default.AutoAwesome, isSelected = true)
 )
 
 val sampleRouteStops = listOf(

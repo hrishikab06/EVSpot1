@@ -152,7 +152,7 @@ fun VehiclesHeader(onAddVehicleClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.width(8.dp))
         Button(
-            onClick = { /* TODO */ },
+            onClick = onAddVehicleClick,
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
