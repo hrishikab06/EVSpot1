@@ -41,6 +41,10 @@ fun UpcomingBookingsScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
+    LaunchedEffect(Unit) {
+        viewModel.fetchBookings()
+    }
+
     val displayBookings = when (selectedTab) {
         0 -> viewModel.bookings
         1 -> viewModel.completedBookings
@@ -116,33 +120,57 @@ fun UpcomingBookingsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                SectionHeader()
-            }
-
-            if (displayBookings.isEmpty()) {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-                        Text("No bookings found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            if (viewModel.isLoading && displayBookings.isEmpty()) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = VoltGreen
+                )
+            } else if (viewModel.errorMessage != null && displayBookings.isEmpty()) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center).padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = ErrorRed, modifier = Modifier.size(48.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(viewModel.errorMessage!!, textAlign = TextAlign.Center)
+                    Button(
+                        onClick = { viewModel.fetchBookings() },
+                        colors = ButtonDefaults.buttonColors(containerColor = VoltGreen),
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Text("Retry")
                     }
                 }
             } else {
-                items(displayBookings) { booking ->
-                    BookingCard(booking)
-                }
-            }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        SectionHeader()
+                    }
 
-            item {
-                InfoBanner()
-                Spacer(modifier = Modifier.height(24.dp))
+                    if (displayBookings.isEmpty()) {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
+                                Text("No bookings found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    } else {
+                        items(displayBookings) { booking ->
+                            BookingCard(booking)
+                        }
+                    }
+
+                    item {
+                        InfoBanner()
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
             }
         }
     }
@@ -220,6 +248,20 @@ fun SectionHeader() {
 
 @Composable
 fun BookingCard(booking: Booking) {
+    val statusColor = when (booking.status.lowercase()) {
+        "upcoming", "confirmed" -> VoltGreen
+        "completed" -> Color(0xFF2E7D32)
+        "cancelled", "expired" -> ErrorRed
+        else -> VoltGreen
+    }
+    
+    val statusBgColor = when (booking.status.lowercase()) {
+        "upcoming", "confirmed" -> PaleGreen
+        "completed" -> Color(0xFFE8F5E9)
+        "cancelled", "expired" -> Color(0xFFFFEBEE)
+        else -> PaleGreen
+    }
+
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
@@ -232,12 +274,12 @@ fun BookingCard(booking: Booking) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Upcoming",
-                    color = VoltGreen,
+                    booking.status,
+                    color = statusColor,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     modifier = Modifier
-                        .background(PaleGreen, RoundedCornerShape(4.dp))
+                        .background(statusBgColor, RoundedCornerShape(4.dp))
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 )
                 Text(

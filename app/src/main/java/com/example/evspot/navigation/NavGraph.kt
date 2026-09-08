@@ -95,7 +95,8 @@ fun AppNavGraph(navController: NavHostController) {
                 onNavigateToDetail = { route ->
                     navController.navigate(route)
                 },
-                vehicleViewModel = vehicleViewModel
+                vehicleViewModel = vehicleViewModel,
+                userViewModel = userViewModel
             )
         }
         

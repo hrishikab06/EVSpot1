@@ -66,3 +66,19 @@ data class BookingResponse(
     val arrival_deadline: String,
     val created_at: String
 )
+
+data class UserBooking(
+    val id: Int,
+    val user_id: Int,
+    val charger_id: Int,
+    val start_time: String,
+    val end_time: String,
+    val status: String,
+    val estimated_cost_inr: Int?,
+    val created_at: String,
+    val arrived_at: String?,
+    val station_name: String?,
+    val station_address: String?,
+    val connector_type: String?,
+    val power_kw: Double?
+)
