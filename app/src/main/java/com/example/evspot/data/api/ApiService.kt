@@ -4,6 +4,9 @@ import com.google.gson.annotations.SerializedName
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.GET
+import retrofit2.http.Query
+import retrofit2.http.Path
 
 data class RegisterRequest(
     val email: String,
@@ -57,23 +60,26 @@ interface ApiService {
     @POST("plan-trip")
     suspend fun planTrip(@Body request: PlanTripRequest): Response<PlanTripResponse>
 
-    @retrofit2.http.GET("stations")
+    @GET("stations")
     suspend fun getStations(): Response<StationResponse>
 
-    @retrofit2.http.GET("stations/{stationId}")
-    suspend fun getStationDetails(@retrofit2.http.Path("stationId") stationId: Int): Response<Station>
+    @GET("stations/{stationId}")
+    suspend fun getStationDetails(@Path("stationId") stationId: Int): Response<Station>
 
-    @retrofit2.http.GET("stations/{stationId}/chargers")
-    suspend fun getChargers(@retrofit2.http.Path("stationId") stationId: Int): Response<ChargersResponse>
+    @GET("stations/{stationId}/chargers")
+    suspend fun getChargers(@Path("stationId") stationId: Int): Response<ChargersResponse>
 
     @POST("chargers/{chargerId}/availability")
     suspend fun checkAvailability(
-        @retrofit2.http.Path("chargerId") chargerId: Int,
+        @Path("chargerId") chargerId: Int,
         @Body request: AvailabilityRequest
     ): Response<AvailabilityResponse>
 
     @POST("bookings")
     suspend fun createBooking(@Body request: BookingRequest): Response<BookingResponse>
+
+    @GET("bookings")
+    suspend fun getBookings(@Query("user_id") userId: Int): Response<List<UserBooking>>
 }
 
 data class PlanTripRequest(

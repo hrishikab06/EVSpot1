@@ -90,4 +90,24 @@ class StationRepository(private val apiService: ApiService = RetrofitClient.inst
             Result.failure(e)
         }
     }
+
+    suspend fun getUserBookings(userId: Int): Result<List<UserBooking>> {
+        Log.d(TAG, "HTTP GET request: /user_bookings?user_id=$userId")
+        return try {
+            val response = apiService.getBookings(userId)
+            if (response.isSuccessful && response.body() != null) {
+                val bookings = response.body()!!
+                Log.d(TAG, "Response SUCCESS: ${bookings.size} bookings returned")
+                bookings.forEach { Log.d(TAG, " - Booking ID: ${it.id}, Status: ${it.status}") }
+                Result.success(bookings)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: response.message()
+                Log.e(TAG, "Response ERROR (Code ${response.code()}): $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Network EXCEPTION fetching bookings", e)
+            Result.failure(e)
+        }
+    }
 }

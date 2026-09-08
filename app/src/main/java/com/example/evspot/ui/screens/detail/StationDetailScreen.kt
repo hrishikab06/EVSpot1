@@ -117,6 +117,8 @@ fun StationDetailScreen(stationId: Int, onBack: () -> Unit, userViewModel: UserV
                                         bookingResult.onSuccess { response ->
                                             bookingDetails = response
                                             showConfirmation = true
+                                            // Refresh user bookings in ViewModel
+                                            userViewModel.fetchBookings()
                                             // Refresh chargers
                                             stationRepository.getChargers(stationId).onSuccess { chargers = it }
                                         }.onFailure { error ->
